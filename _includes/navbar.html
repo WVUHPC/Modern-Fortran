@@ -32,6 +32,10 @@
       <a href="{{ site.carpentries_site }}" class="pull-left">
         <img class="navbar-logo" src="{{ relative_root_path }}{% link /assets/img/cp-logo-blue.svg %}" alt="The Carpentries logo" />
       </a>
+      {% elsif site.carpentry == "wvu" %}
+      <a href="{{ site.wvu_site }}" class="pull-left">
+        <img class="navbar-logo" src="{{ relative_root_path }}{% link /assets/img/wvu-rc.png %}" alt="WVU Research Computing" />
+      </a>
       {% endif %}
 
       {% comment %} Always show link to home page. {% endcomment %}

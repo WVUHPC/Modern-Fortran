@@ -1,6 +1,6 @@
 ---
-title: "Introduction"
-teaching: 0
+title: "Expressions"
+teaching: 30
 exercises: 0
 questions:
 - "Key question (FIXME)"
@@ -12,4 +12,3 @@ keypoints:
 FIXME
 
 {% include links.md %}
-

@@ -71,5 +71,97 @@ Statements can start at the first column.
 An exclamation mark starts a comment and comments could be inserted any place in the line, except literal strings.
 Blanks help readability of the code.
 Variables cannot have spaces, it is a better practice to use underscore for multi word variables.
+Use ``&`` as the last character for continuing on the next line.
+Declaring multiple statements on the same line is possible with semicolon (``;``) but use it only for very short statements.
+
+Example (``example_1.f90``):
+
+~~~
+program free_form
+   print *, 'This statement starts in column 4 (with indentation)'
+   x = 0.1; y = 0.7 ! Two small statements in one line
+                    ! Comment with an exclamation mark
+   tan_x_plus_y = tan(x) + tan(y) / &  ! Line with continuation
+           (1- tan(x)*tan(y))
+end program free_form
+~~~
+{: .language-fortran}
+
+Use blank characters, blank lines and comments to improve readability of your code.
+A cluttered code is hard to read and you are not doing any good trying to fit most of your code in one screen page.
+
+Instead of this (``example_2_bad.f90``):
+
+~~~
+!BAD CODE
+program log_sqrt
+x=99.9
+y=log10(sqrt(x))
+if(y.lt.1.0) print *,'x is less than 100'
+end program
+~~~
+{: .language-fortran}
+
+This code is too compact, it is not hard to read because is too small, but for bigger codes became really hard to follow.
+
+An alternative is like this (``example_2_bad.f90``):
+
+~~~
+!GOOD
+program log_sqrt
+
+   x = 99.9
+   y = log10(sqrt(x))
+
+   if (y .lt. 1.0) &
+           print *, 'x is less than 100'
+
+end program log_sqrt
+~~~
+{: .language-fortran}
+
+We include spaces to clarify variable assignments from the conditional.
+Indentations inside the ``program`` and ``end program`` also help to visualize the scope of blocks.
+
+## Old style DO loops
+
+In old FORTRAN 77, do loops have a number identifier to jump to a ``continue`` statement to cycle the loop, that is completely obsolete and must be avoided in modern coding (``example_3_bad.f90``):
+
+~~~
+      PROGRAM square
+      DO 100 I=1,100
+      X=I
+      X2=X*X
+      IF(X2.LT.100) print *, 'X=', I, ' X^2 wil have less than 3 digits'
+100   CONTINUE
+      END
+~~~
+{: .language-fortran}
+
+This old style coding waste 6 columns of space, uses a labeled statement for cycling and is written with full capitalization.
+
+An alternative is something like this (``example_3_good.f90``):
+
+~~~
+program square
+
+   implicit none
+
+   real :: x, x2
+   integer :: i
+
+   do i = 1, 100
+      x = i
+      x2 = x*x
+      if (x2 < 100) &
+         print *, 'X=', I, ' X^2 wil have less than 3 digits'
+   end do
+
+end program
+~~~
+{: .language-fortran}
+
+This code uses indentations, and has an ``end do`` that is clearer for the user when the loops grows or became nested. We will discuss the ``implicit`` down below
+
 
 {% include links.md %}

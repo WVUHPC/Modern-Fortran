@@ -1,5 +1,5 @@
 ---
-title: "Parallel Loops"
+title: "Parallel Tasks"
 teaching: 30
 exercises: 0
 questions:

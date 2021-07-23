@@ -1,5 +1,5 @@
 ---
-title: "Coarrays"
+title: "Best Practices in Modern Fortran"
 teaching: 30
 exercises: 0
 questions:
@@ -9,6 +9,7 @@ objectives:
 keypoints:
 - "First key point. Brief Answer to questions. (FIXME)"
 ---
-FIXME
+
+
 
 {% include links.md %}

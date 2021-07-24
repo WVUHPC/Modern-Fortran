@@ -163,5 +163,190 @@ end program
 
 This code uses indentations, and has an ``end do`` that is clearer for the user when the loops grows or became nested. We will discuss the ``implicit`` down below
 
+## Variable Attributes
+
+Fortran 95 introduce variable attributes and they were extended in Fortran 2003 and 2008. The most common attributes are
+``parameter``, ``dimension``, ``allocatable``, ``intent``, ``pointer``, ``target``, ``optional``, ``private``, ``public``, ``value`` and ``bind``
+
+From those we will demonstrate the first 3.
+``parameter`` is important for declaring constants that otherwise will require going beyond the language and use the preprocessor.
+``dimension`` is use to define the length of arrays or the dimension using colon and commas to declare it.
+``allocatable`` is used for dynamic allocation of arrays an important feature introduced in Fortran 90 and expanded in Fortran 95 and beyond.
+This is an example using these 3 attributes that should be frequently used (``example_4.f90``).
+
+~~~
+program f95attributes
+
+   implicit none
+
+   integer :: i, j
+   integer, parameter :: n = 100
+   real :: x
+   real, parameter :: pi = 3.141592653
+   real, dimension(n) :: array
+   real, dimension(:, :), allocatable :: dyn_array2d
+
+   allocate (dyn_array2d(2*n, 2*n))
+
+   do i = 1, 2*n
+      do j = 1, 2*n
+         dyn_array2d(j, i) = j + 0.0001*i
+      end do
+   end do
+
+   do i = 1, 10
+        print '(10(F9.4))', dyn_array2d(i,1:10)
+   end do
+
+end program
+~~~
+{: .language-fortran}
+
+## implicit none
+
+By default all variables starting with ``i``, ``j``, ``k``, ``l``, ``m`` and ``n`` are integers.
+All others are real.
+
+Despite of this being usually true for small codes, it is better to turn those defaults off with ``implicit none``
+Variables in large codes will have names with scientific meaning and the defaults can bring bugs that are hard to catch.
+
+~~~
+program implicit
+   ! use to disable the default
+   implicit none
+
+   real :: J_ij !Interaction factor in Ising Model
+
+end program
+~~~
+{: .language-fortran}
+
+## Loops, exit and cycle
+
+Use ``exit`` to abandon a loop and ``cycle`` to jump to the next iteration.
+These are better replacements to complicated ``GOTO`` statements from old FORTRAN.
+You can use ``exit`` and ``cycle`` in bounded and unbounded loops.
+
+The file ``example_5.f90`` and ``example_6.f90`` show the effect of ``exit`` and ``cycle`` respectively.
+
+~~~
+program do_exit
+
+   implicit none
+
+   integer :: i
+   real, parameter :: pi = 3.141592653
+   real :: x, y
+
+   do i = 0, 360, 10
+      x = cos(real(i)*pi/180)
+      y = sin(real(i)*pi/180)
+
+      if (abs(x) < 1E-7) then
+         print *, "Small denominator (exit)"
+         exit
+      end if
+      print *, i, x, y, y/x
+   end do
+
+   print *, 'Final values:', i, x
+
+end program
+~~~
+{: .language-fortran}
+
+~~~
+program do_cycle
+
+   implicit none
+
+   integer :: i
+   real, parameter :: pi = 3.141592653
+   real :: x, y
+
+   do i = 0, 360, 10
+      x = cos(real(i)*pi/180)
+      y = sin(real(i)*pi/180)
+
+      if (abs(x) < 1E-7) then
+         print *, "Small denominator (cycle)"
+         cycle
+      end if
+      print *, i, x, y, y/x
+   end do
+
+   print *, 'Final values:', i, x
+
+end program
+~~~
+{: .language-fortran}
+
+In the case of nested loops, the solution is to name the loop.
+Constructs such as ``do``, ``if`` as ``case`` can be named and you can use the name to leave outer loops from inside a inner loop.
+
+~~~
+...
+outer: do i = 0, 360, 10
+   inner: do j = 0, 360, 10
+      x = cos(real(i)*pi/180)
+      y = sin(real(j)*pi/180)
+
+      if (abs(x) < 1E-7) then
+         print *, "Small denominator (exit)"
+         exit outer
+      end if
+      print *, i, x, y, y/x
+   end do inner
+end do outer
+...
+~~~
+{: .language-fortran}
+
+~~~
+...
+outer: do i = 0, 360, 10
+   inner: do j = 0, 360, 10
+      x = cos(real(i)*pi/180)
+      y = sin(real(j)*pi/180)
+
+      if (abs(x) < 1E-7) then
+         print *, "Small denominator (cycle)"
+         cycle outer
+      end if
+      print *, i, x, y, y/x
+   end do inner
+end do outer
+...
+~~~
+{: .language-fortran}
+
+## The ``case`` construct
+
+The ``case`` construct in Fortran works different from its homologous in C language.
+In C you need to use a break, otherwise the code will test every single case.
+In Fortran once one case passes the condition, the others will be skipped.
+In Fortran case take ranges apart from a single element as other languages.
+Example:
+
+~~~
+integer :: temp_gold
+
+! Temperature in Kelvin!
+select case (temp_gold)
+case (:1337)
+write (*,*) ’Solid’
+case (1338:3243)
+write (*,*) ’Liquid’
+case (3244:)
+write (*,*) ’Gas’
+case default
+write (*,*) ’Invalid temperature’
+end select
+~~~
+{: .language-fortran}
+
+
+
+
 
 {% include links.md %}

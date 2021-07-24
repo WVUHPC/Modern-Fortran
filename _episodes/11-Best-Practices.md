@@ -611,14 +611,257 @@ Declarations and allocation happens in two steps instead of a single step with f
 As allocation takes time, it is not good idea to allocate and deallocate very often.
 Allocate once and use the space as much as possible.
 Fortran 90 introduce ``ALLOCATABLE`` attributes and ``allocate`` and ``deallocate`` functions.
-Fotran 95 added ``DIMENSION`` attribute as an alternative to specify the dimension of arrays. Otherwise, the array shape must be specified after array-variable name. For example:
+Fotran 95 added ``DIMENSION`` attribute as an alternative to specify the dimension of arrays. Otherwise, the array shape must be specified after array-variable name. For example (``example_10.f90``):
 
 ~~~
-REAL:: a(10)
-REAL, DIMENSION(0:100, -50:50) :: b
+program alloc_array
+
+   implicit none
+
+   integer, parameter :: n = 10, m = 20
+   integer :: i, j, ierror
+
+   real :: a(10)
+   real, dimension(10:100, -50:50) :: b
+   real, allocatable :: c(:, :)
+
+   real, dimension(:), allocatable :: x_1d
+   real, dimension(:, :), allocatable :: x_2d
+
+   allocate (c(-9:10, -4:5))
+
+   allocate (x_1d(n), x_2d(n, m), stat=ierror)
+   if (ierror /= 0) stop 'error in allocation'
+
+   do i = 1, n
+      x_1d(i) = i
+      do j = 1, m
+         c(j - 10, i - 5) = j-10 + 0.01*(i-5) ! contiguous operation
+         x_2d(i, j) = i + 0.01*j              ! non-contiguous operation
+      end do
+   end do
+
+   print *,''
+   print '(A, 10(F6.2))', 'x_1d:', x_1d(:)
+
+   print *,''
+   do j = -9, 10
+      print '(A, 10(F6.2))', 'c   :', c(j, :)
+   end do
+
+   print *,''
+   do i = 1, n
+      print '(A, 20(F6.2))', 'x_2d:', x_2d(i, :)
+   end do
+
+   deallocate (c, x_1d, x_2d)
+
+end program
 ~~~
 {: language-fortran}
 
+## Array Allocations: heap vs stack
+
+Static arrays could be allocated on the stack instead of using the heap.
+The stack has a limited size and under some circumstances static arrays could exhaust the stack space allowed for a process.
+Consider this example (``example_11.f90``):
+
+~~~
+program arraymem
+
+   use iso_fortran_env
+
+   implicit none
+
+   integer, parameter :: n = 2*1024*1024 - 4096
+
+   print *, 'Numeric Storage (bits): ', numeric_storage_size
+   print *, 'Creating array N ', n
+
+   call meanArray(n)
+
+contains
+
+   subroutine meanArray(n)
+      integer, intent(in) :: n
+      integer :: dumb
+      integer, dimension(n) :: a
+      a = 1
+      !print *, sum(a)
+      read *, dumb
+   end subroutine meanArray
+
+end program arraymem
+~~~
+{: language-fortran}
+
+You can check the limit for stack memory on the machine:
+
+~~~
+$> ulimit -S  -s
+8192
+$> ulimit -H  -s
+unlimited
+~~~
+{: .language-bash}
+
+We have a soft limit of 8MB for stack and the user can raise its value to an unlimited value.
+
+As the limit is 8MB we will create an integer array that takes a bit under 8MB.
+The array will be of integers and each integer takes by default 4 Bytes. This is not a safe value but will work for the purpose of demonstrating the effect:
+
+~~~
+n = 2*1024*1024 - 4096
+~~~
+{: .source}
+
+Now we will compile the code above with ``gfortran``, forcing the static arrays to be on stack.
+Some compilers move large arrays to heap automatically so we are bypassing this protection.
+
+~~~
+$> gfortran -fstack-arrays example_11.f90
+$> ./a.out
+~~~
+{: .language-bash}
+
+Sometimes you will get an output like this:
+
+~~~
+ Numeric Storage (bits):           32
+ Creating array N      2093056
+Segmentation fault (core dumped)
+~~~
+{: .source}
+
+We are so close to filling the stack that small variations in loading libraries could cross the limit.
+Try a few times until the code stops when asking for an input from the keyboard.
+
+Once the code is waiting for any input, execute this command on a separate terminal:
+
+~~~
+$> pmap -x `ps ax | grep a.ou[t] | awk '{print $1}' | head -1`
+~~~
+{: .language-bash}
+
+The command ``pmap`` will print a map of the memory and the stack is marked there.
+
+~~~
+Address           Kbytes     RSS   Dirty Mode  Mapping
+0000000000400000       4       4       0 r---- a.out
+0000000000401000       4       4       0 r-x-- a.out
+0000000000402000       4       4       0 r---- a.out
+0000000000403000       4       4       4 r---- a.out
+0000000000404000       4       4       4 rw--- a.out
+0000000001a3e000     132      16      16 rw---   [ anon ]
+00007f8fb9948000    1808     284       0 r-x-- libc-2.17.so
+00007f8fb9b0c000    2044       0       0 ----- libc-2.17.so
+00007f8fb9d0b000      16      16      16 r---- libc-2.17.so
+00007f8fb9d0f000       8       8       8 rw--- libc-2.17.so
+00007f8fb9d11000      20      12      12 rw---   [ anon ]
+00007f8fb9d16000     276      16       0 r-x-- libquadmath.so.0.0.0
+00007f8fb9d5b000    2048       0       0 ----- libquadmath.so.0.0.0
+00007f8fb9f5b000       4       4       4 r---- libquadmath.so.0.0.0
+00007f8fb9f5c000       4       4       4 rw--- libquadmath.so.0.0.0
+00007f8fb9f5d000      92      24       0 r-x-- libgcc_s.so.1
+00007f8fb9f74000    2044       0       0 ----- libgcc_s.so.1
+00007f8fba173000       4       4       4 r---- libgcc_s.so.1
+00007f8fba174000       4       4       4 rw--- libgcc_s.so.1
+00007f8fba175000    1028      64       0 r-x-- libm-2.17.so
+00007f8fba276000    2044       0       0 ----- libm-2.17.so
+00007f8fba475000       4       4       4 r---- libm-2.17.so
+00007f8fba476000       4       4       4 rw--- libm-2.17.so
+00007f8fba477000    2704     220       0 r-x-- libgfortran.so.5.0.0
+00007f8fba71b000    2048       0       0 ----- libgfortran.so.5.0.0
+00007f8fba91b000       4       4       4 r---- libgfortran.so.5.0.0
+00007f8fba91c000       8       8       8 rw--- libgfortran.so.5.0.0
+00007f8fba91e000     136     108       0 r-x-- ld-2.17.so
+00007f8fbab29000      16      16      16 rw---   [ anon ]
+00007f8fbab3d000       8       8       8 rw---   [ anon ]
+00007f8fbab3f000       4       4       4 r---- ld-2.17.so
+00007f8fbab40000       4       4       4 rw--- ld-2.17.so
+00007f8fbab41000       4       4       4 rw---   [ anon ]
+00007ffd65b94000    8192    8192    8192 rw---   [ stack ]
+00007ffd663d3000       8       4       0 r-x--   [ anon ]
+ffffffffff600000       4       0       0 r-x--   [ anon ]
+---------------- ------- ------- -------
+total kB           24744    9056    8324
+~~~
+{: .output}
+
+Notice that in this case we have fully consumed the stack.
+Compilers could take decisions of moving static arrays to the heap, but even with this provisions, is very easy that multiple arrays combined could cross the limit.
+
+Consider arrays to be always ``allocatables``, so they are allocated on the heap always.
+
+## Derived Types and Structures
+
+Beyond the variables of simple type (real, integer, character, logical, complex) new data types can be created by grouping them into a derived types.
+Derived types can also include other derived types
+Arrays can also be included both static and allocatables.
+Structures can be made allocatable.
+
+Consider this example that shows the use of *derived types* and its instances called *structures*.
+
+~~~
+program use_structs
+
+   implicit none
+
+   integer :: i
+
+   ! Electron Configuration
+   ! Example: [Xe] 6s1 4f14 5d10
+   type electron_configuration
+
+      character(len=3) :: base_configuration
+      integer, allocatable, dimension(:) :: levels
+      integer, allocatable, dimension(:) :: orbitals
+      integer, allocatable, dimension(:) :: n_electrons
+
+   end type electron_configuration
+
+   ! Information about one atom
+   type atom
+
+      integer :: Z
+      character(len=3) symbol
+      character(len=20) name
+      integer, allocatable, dimension(:) :: oxidation_states
+      real :: electron_affinity, ionization_energy
+      type(electron_configuration) :: elec_conf ! structure
+
+   end type atom
+
+   ! Structures (Variables) of the the derived type my_struct
+   type(atom) :: gold
+   type(atom), dimension(15) :: lanthanide
+
+   gold%Z = 79
+   gold%symbol = 'Au'
+   gold%name = 'Gold'
+   allocate (gold%oxidation_states(2))
+   gold%oxidation_states = [3, 1]
+   gold%electron_affinity = 2.309
+   gold%ionization_energy = 9.226
+   allocate (gold%elec_conf%levels(3))
+   allocate (gold%elec_conf%orbitals(3))
+   allocate (gold%elec_conf%n_electrons(3))
+   gold%elec_conf%base_configuration = 'Xe'
+   gold%elec_conf%levels = [6, 4, 5]
+   gold%elec_conf%orbitals = [1, 4, 3]
+   gold%elec_conf%n_electrons = [1, 14, 10]
+
+   print *, 'Atom name', gold%name
+   print *, 'Configuration:', gold%elec_conf%base_configuration
+   do i = 1, size(gold%elec_conf%levels)
+      print '(3(I4))', &
+         gold%elec_conf%levels(i), &
+         gold%elec_conf%orbitals(i), &
+         gold%elec_conf%n_electrons(i)
+   end do
+end program
+~~~
+{: .language-fortran}
 
 
 {% include links.md %}

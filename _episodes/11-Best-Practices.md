@@ -863,5 +863,14 @@ end program
 ~~~
 {: .language-fortran}
 
+## Functions, Subroutines and Modules
+
+A simple program will have only variable declarations and statements.
+The next level of organization is to encapsulate variable declarations and statements as an entity (function or subroutine) that can be reused inside the main program, other programs or other
+function or subroutine.
+
+Another advantage of moving code inside functions or subroutines is that you hide variables inside the scope of the function, allowing the reuse of the names in other routines without collisions.
+
+
 
 {% include links.md %}

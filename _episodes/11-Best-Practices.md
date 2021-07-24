@@ -345,6 +345,16 @@ end select
 ~~~
 {: .language-fortran}
 
+## The ``kind`` of variables
+
+There are at least 2 kinds of reals: 4-byte, 8-byte.
+Some compilers offer a third kind with 16-byte reals.
+The kind-numbers are usually 4, 8, and 16, but this is just a tradition of several languages and not mandatory by the language.
+The kind values could perfectly (1, 2 and 4).
+
+Fortran 2008 fixed this issue in a more consistent way.
+There is an intrinsic module called ``
+
 
 
 

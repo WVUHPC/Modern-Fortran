@@ -1,11 +1,13 @@
 program kinds
 
-   implicit none
-
    use iso_fortran_env
 
-   print *, real_kinds
-   print *, integer_kinds
+   implicit none
+
+   print *, 'Logical  : ', logical_kinds
+   print *, 'Character: ', character_kinds
+   print *, 'Integer  : ', integer_kinds
+   print *, 'Real     : ', real_kinds
 
 end program kinds
 

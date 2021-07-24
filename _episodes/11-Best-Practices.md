@@ -352,10 +352,272 @@ Some compilers offer a third kind with 16-byte reals.
 The kind-numbers are usually 4, 8, and 16, but this is just a tradition of several languages and not mandatory by the language.
 The kind values could perfectly (1, 2 and 4).
 
-Fortran 2008 fixed this issue in a more consistent way.
-There is an intrinsic module called ``
+There is an intrinsic module called ``iso_fortran_env`` that provide the kind values for logical, character, integer and real data types.
 
+Consider this example to get the values used (``example_7.f90``)
 
+~~~
+program kinds
+
+   use iso_fortran_env
+
+   implicit none
+
+   print *, 'Logical  : ', logical_kinds
+   print *, 'Character: ', character_kinds
+   print *, 'Integer  : ', integer_kinds
+   print *, 'Real     : ', real_kinds
+
+end program kinds
+~~~
+{: .language-fortran}
+
+Different compilers will respond with different kinds values.
+For example, ``gfortran`` will return this:
+
+~~~
+Logical  :            1           2           4           8          16
+Character:            1           4
+Integer  :            1           2           4           8          16
+Real     :            4           8          10          16
+~~~
+{: .output}
+
+As Fortran have evolve over the years, several ways were created to declare the *storage size* of different kinds and consequently the *precision* of them. This example explores some of those old ways that you can still encounter in codes.
+
+Consider this example illustrative of the multiple ways of declaring REAL variables (``example_8.f90``):
+
+~~~
+program kinds
+
+   use iso_fortran_env
+
+   implicit none
+
+   integer :: i, my_kind
+
+   real :: x_real              ! the default
+   real*4 :: x_real4           ! Real with 4 bytes
+   real*8 :: x_real8           ! Real with 8 bytes
+   DOUBLE PRECISION :: x_db    ! Old way from FORTRAN 66
+
+   integer, parameter :: k9 = selected_real_kind(9)
+   real(kind=k9) :: r
+
+   print *, 'Kind for integer            :', kind(i)
+   print *, 'Kind for real               :', kind(x_real)
+   print *, 'Kind for real*4             :', kind(x_real4)
+   print *, 'Kind for real*8             :', kind(x_real8)
+   print *, 'Kind for DOUBLE PRECISION   :', kind(x_db)
+   print *, ''
+
+   my_kind = selected_real_kind(9)
+   print *, 'Which is the "kind" I should use to get 9 significant digits?  ', my_kind
+
+   my_kind = selected_real_kind(15)
+   print *, 'Which is the "kind" I should use to get 15 significant digits? ', my_kind
+
+   r = 2._k9;
+   print *, 'Value for k9', k9
+   print *, 'Square root of 2.0 for default real      :', sqrt(2.0)   ! prints 1.41421354
+   print *, 'Square root of 2.0 for DOUBLE PRECISION  :', sqrt(2.0d0) ! prints 1.41421354
+   print *, 'Square root of 2.0 for numer of kind(k9) :', sqrt(r)     ! prints 1.4142135623730951
+
+end program
+~~~
+{: .language-fortran}
+
+The original REAL data type have received multiple variations for declaring floating point numbers based on rather ambiguous terms such as ``DOUBLE PRECISION`` which actually does not mean what literally says.
+Other variations use the kind assuming that the numbers 4, 8, and 16 represent the number of bytes used by each data type, this is not standard and salford f95 compiler used kinds 1,2, and 3 to stand for 2- 4- and 8-byte.
+
+Notice that storage size is not the same as precision. Those terms are related and you expect that more bytes will end up giving more precision, but REALS have several internal components such as the size of mantissa and exponent.
+The 24 bits (including the hidden bit) of mantissa in a 32-bit floating-point number represent about 7 significant decimal digits.
+
+Even though, this is not the same across all the real space.
+We are using the same number of bits to represent all normalized numbers, the smaller the exponent, the greater the density of truncated numbers.
+For example, there are approximately 8 million single-precision numbers between 1.0 and 2.0, while there are only about 8 thousand numbers between 1023.0 and 1024.0.  
+
+Beyond the standard representation, you can also change the *storage size* during compilation.
+Below, the same code was compiled using arguments that change the storage size of different variables.
+
+~~~
+$> gfortran example_8.f90
+$> ./a.out
+~~~
+{: .language-bash}
+~~~
+ Kind for integer            :           4
+ Kind for real               :           4
+ Kind for real*4             :           4
+ Kind for real*8             :           8
+ Kind for DOUBLE PRECISION   :           8
+
+ Which is the "kind" I should use to get 9 significant digits?             8
+ Which is the "kind" I should use to get 15 significant digits?            8
+ Value for k9           8
+ Square root of 2.0 for default real      :   1.41421354    
+ Square root of 2.0 for DOUBLE PRECISION  :   1.4142135623730951     
+ Square root of 2.0 for numer of kind(k9) :   1.4142135623730951     
+ ~~~
+ {: .output}
+ ~~~
+$> gfortran -fdefault-real-16 example_8.f90
+$> ./a.out
+~~~
+{: .language-bash}
+~~~
+ Kind for integer            :           4
+ Kind for real               :          16
+ Kind for real*4             :           4
+ Kind for real*8             :           8
+ Kind for DOUBLE PRECISION   :          16
+
+ Which is the "kind" I should use to get 9 significant digits?             8
+ Which is the "kind" I should use to get 15 significant digits?            8
+ Value for k9           8
+ Square root of 2.0 for default real      :   1.41421356237309504880168872420969798      
+ Square root of 2.0 for DOUBLE PRECISION  :   1.41421356237309504880168872420969798      
+ Square root of 2.0 for numer of kind(k9) :   1.4142135623730951     
+~~~
+{: .output}
+~~~
+$> gfortran -fdefault-real-16 -fdefault-double-8 example_8.f90
+$> ./a.out
+~~~
+{: .language-bash}
+~~~
+ Kind for integer            :           4
+ Kind for real               :          16
+ Kind for real*4             :           4
+ Kind for real*8             :           8
+ Kind for DOUBLE PRECISION   :           8
+
+ Which is the "kind" I should use to get 9 significant digits?             8
+ Which is the "kind" I should use to get 15 significant digits?            8
+ Value for k9           8
+ Square root of 2.0 for default real      :   1.41421356237309504880168872420969798      
+ Square root of 2.0 for DOUBLE PRECISION  :   1.4142135623730951     
+ Square root of 2.0 for numer of kind(k9) :   1.4142135623730951      
+~~~
+{: .output}
+
+Fortran 2008 includes standard kinds ``real32``, ``real64``, ``real128`` to specify a REAL type with a storage size of 32, 64, and 128 bits. In cases where target platform does not support the particular kind a negative value is returned.
+
+This example shows the new kind parameters (``example_9.f90``).
+
+~~~
+program newkinds
+
+   use iso_fortran_env
+
+   implicit none
+
+   real(kind=real32) :: x32
+   real(kind=real64) :: x64
+   real(kind=real128) :: x128
+
+   print *, 'real32  : ', real32, achar(10), &
+           ' real64  : ', real64, achar(10), &
+           ' real128 : ', real128
+
+   x32 = 2.0
+   x64 = 2.0
+   x128 = 2.0
+
+   print *, 'SQRT(2.0) using kind=real32  :', sqrt(x32)
+   print *, 'SQRT(2.0) using kind=real64  :', sqrt(x64)
+   print *, 'SQRT(2.0) using kind=real128 :', sqrt(x128)
+
+end program
+~~~
+{: .language-fortran}
+
+The storage size of these variables is no longer affected by the compiler arguments used above.
+
+~~~
+$> gfortran example_9.f90
+$> ./a.out
+~~~
+{: .language-bash}
+~~~
+ real32  :            4
+ real64  :            8
+ real128 :           16
+ SQRT(2.0) using kind=real32  :   1.41421354    
+ SQRT(2.0) using kind=real64  :   1.4142135623730951     
+ SQRT(2.0) using kind=real128 :   1.41421356237309504880168872420969818      
+ ~~~
+ {: .output}
+ ~~~
+$> gfortran -fdefault-real-16 -fdefault-double-8 example_9.f90
+$> ./a.out
+~~~
+{: .language-bash}
+~~~
+ real32  :            4
+ real64  :            8
+ real128 :           16
+ SQRT(2.0) using kind=real32  :   1.41421354    
+ SQRT(2.0) using kind=real64  :   1.4142135623730951     
+ SQRT(2.0) using kind=real128 :   1.41421356237309504880168872420969818      
+~~~
+{: .output}
+
+You can still change those kinds during compile time using command line arguments ``-freal-4-real-10``, ``-freal-8-real-10`` and similar ones.
+
+~~~
+$> gfortran -freal-4-real-10 -freal-8-real-10 example_9.f90
+$> ./a.out
+~~~
+{: .language-bash}
+~~~
+ real32  :            4
+ real64  :            8
+ real128 :           16
+ SQRT(2.0) using kind=real32  :   1.41421356237309504876      
+ SQRT(2.0) using kind=real64  :   1.41421356237309504876      
+ SQRT(2.0) using kind=real128 :   1.41421356237309504880168872420969818      
+~~~
+{: .output}
+
+~~~
+$> gfortran -freal-4-real-16 -freal-8-real-16 example_9.f90
+$> ./a.out
+~~~
+{: .language-bash}
+~~~
+ real32  :            4
+ real64  :            8
+ real128 :           16
+ SQRT(2.0) using kind=real32  :   1.41421356237309504880168872420969818      
+ SQRT(2.0) using kind=real64  :   1.41421356237309504880168872420969818      
+ SQRT(2.0) using kind=real128 :   1.41421356237309504880168872420969818      
+~~~
+{: .output}
+
+Changing kinds during compile time could have unintended consequences, for example using external libraries as could be the case with MPI.
+
+## Allocatable arrays
+
+There are two types of memory for a program: The *stack* and the *heap*.
+Scalars and static arrays live in the *stack* but the size of that space is very limited and some sysadmins and queue systems limits its value even more.
+Most other variables including allocatable arrays live on the heap.
+
+Before allocatable arrays were part of Fortran 90, Arrays were created with fixed size.
+Programs used arrays with sizes that overstimated the actual needs for storage or require being recompiled every time the size of those arrays changed.
+Still some scientific codes work with fixed arrays and need recompilation before any simulation.
+Modern written codes (Since Fortran 90) used allocatable arrays.
+Declarations and allocation happens in two steps instead of a single step with fixed arrays.
+As allocation takes time, it is not good idea to allocate and deallocate very often.
+Allocate once and use the space as much as possible.
+Fortran 90 introduce ``ALLOCATABLE`` attributes and ``allocate`` and ``deallocate`` functions.
+Fotran 95 added ``DIMENSION`` attribute as an alternative to specify the dimension of arrays. Otherwise, the array shape must be specified after array-variable name. For example:
+
+~~~
+REAL:: a(10)
+REAL, DIMENSION(0:100, -50:50) :: b
+~~~
+{: language-fortran}
 
 
 

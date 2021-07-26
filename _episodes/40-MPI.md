@@ -92,7 +92,46 @@ If you have a computer with 4 or 8 cores, you can run all the examples and exerc
 Even if you have just one core, you can still execute MPI programs.
 Running the code will create multiple cores that will share the same CPU, but that is just an efficiency issue, MPI should still work.
 
+## MPI Machinery: Library, compiler wrappers and Runtime utility
 
+A code that uses MPI needs more than just a library.
+When the code runs multiple processes need to be created, potentially on different machines, they need to communicate and there is a need for an infraestructure that decides how data is transferred.
+
+In practice a program that uses MPI needs several pieces from a MPI implementation.
+
+1. **Compiler wrapper**
+
+A MPI implementation will provide wrappers for the compilers.
+A wrapper is an executable that is put in the middle between the sources and an actual compiler such as ``gfortran``, ``nvfortran`` or ``ifort``.
+
+The wrapper for Fortran is usually called ``mpif90`` or in the case of Intel MPI you have ``mpiifort``.
+To compile a code with MPI use:
+
+~~~
+mpif90 mpi_01.f90
+~~~
+{: .language-bash}
+
+The wrapper ``mpif90`` internally will call the compiler used to build the MPI version you are using.
+We will compile a simple code very soon and see how that works in practice.
+
+2. **Runtime MPI execution**
+
+Running a MPI code is different from running any other code that you compile.
+Normally when you are testing small codes, you compile them with your compiler (for example ``gfortran``) and you produce an executable like ``a.out`` and execute it:
+
+~~~
+$> gfortran example_01.f90
+$> ./a.out
+~~~
+{: .language-bash}
+
+In MPI we need an intermediary, an executable that will be in charge of launching processes in all the machines that will execute the code. The name of the executable is ``mpirun`` or ``mpiexec``  
+
+You can use either one.
+``mpiexec`` is defined in the MPI standard.
+``mpirun`` is a command implemented by many MPI implementations.
+As this one is not standardized, there are often subtle differences between implementations.
 
 
 

@@ -74,7 +74,7 @@ Variables cannot have spaces, it is a better practice to use underscore for mult
 Use ``&`` as the last character for continuing on the next line.
 Declaring multiple statements on the same line is possible with semicolon (``;``) but use it only for very short statements.
 
-Example (``example_1.f90``):
+Example (``example_01.f90``):
 
 ~~~
 program free_form
@@ -90,7 +90,7 @@ end program free_form
 Use blank characters, blank lines and comments to improve readability of your code.
 A cluttered code is hard to read and you are not doing any good trying to fit most of your code in one screen page.
 
-Instead of this (``example_2_bad.f90``):
+Instead of this (``example_02_bad.f90``):
 
 ~~~
 !BAD CODE
@@ -104,7 +104,7 @@ end program
 
 This code is too compact, it is not hard to read because is too small, but for bigger codes became really hard to follow.
 
-An alternative is like this (``example_2_bad.f90``):
+An alternative is like this (``example_02_bad.f90``):
 
 ~~~
 !GOOD
@@ -125,7 +125,7 @@ Indentations inside the ``program`` and ``end program`` also help to visualize t
 
 ## Old style DO loops
 
-In old FORTRAN 77, do loops have a number identifier to jump to a ``continue`` statement to cycle the loop, that is completely obsolete and must be avoided in modern coding (``example_3_bad.f90``):
+In old FORTRAN 77, do loops have a number identifier to jump to a ``continue`` statement to cycle the loop, that is completely obsolete and must be avoided in modern coding (``example_03_bad.f90``):
 
 ~~~
       PROGRAM square
@@ -140,7 +140,7 @@ In old FORTRAN 77, do loops have a number identifier to jump to a ``continue`` s
 
 This old style coding waste 6 columns of space, uses a labeled statement for cycling and is written with full capitalization.
 
-An alternative is something like this (``example_3_good.f90``):
+An alternative is something like this (``example_03_good.f90``):
 
 ~~~
 program square
@@ -172,7 +172,7 @@ From those we will demonstrate the first 3.
 ``parameter`` is important for declaring constants that otherwise will require going beyond the language and use the preprocessor.
 ``dimension`` is use to define the length of arrays or the dimension using colon and commas to declare it.
 ``allocatable`` is used for dynamic allocation of arrays an important feature introduced in Fortran 90 and expanded in Fortran 95 and beyond.
-This is an example using these 3 attributes that should be frequently used (``example_4.f90``).
+This is an example using these 3 attributes that should be frequently used (``example_04.f90``).
 
 ~~~
 program f95attributes
@@ -227,7 +227,7 @@ Use ``exit`` to abandon a loop and ``cycle`` to jump to the next iteration.
 These are better replacements to complicated ``GOTO`` statements from old FORTRAN.
 You can use ``exit`` and ``cycle`` in bounded and unbounded loops.
 
-The file ``example_5.f90`` and ``example_6.f90`` show the effect of ``exit`` and ``cycle`` respectively.
+The file ``example_05.f90`` and ``example_06.f90`` show the effect of ``exit`` and ``cycle`` respectively.
 
 ~~~
 program do_exit
@@ -354,7 +354,7 @@ The kind values could perfectly (1, 2 and 4).
 
 There is an intrinsic module called ``iso_fortran_env`` that provide the kind values for logical, character, integer and real data types.
 
-Consider this example to get the values used (``example_7.f90``)
+Consider this example to get the values used (``example_07.f90``)
 
 ~~~
 program kinds
@@ -385,7 +385,7 @@ Real     :            4           8          10          16
 
 As Fortran have evolve over the years, several ways were created to declare the *storage size* of different kinds and consequently the *precision* of them. This example explores some of those old ways that you can still encounter in codes.
 
-Consider this example illustrative of the multiple ways of declaring REAL variables (``example_8.f90``):
+Consider this example illustrative of the multiple ways of declaring REAL variables (``example_08.f90``):
 
 ~~~
 program kinds
@@ -441,7 +441,7 @@ Beyond the standard representation, you can also change the *storage size* durin
 Below, the same code was compiled using arguments that change the storage size of different variables.
 
 ~~~
-$> gfortran example_8.f90
+$> gfortran example_08.f90
 $> ./a.out
 ~~~
 {: .language-bash}
@@ -461,7 +461,7 @@ $> ./a.out
  ~~~
  {: .output}
  ~~~
-$> gfortran -fdefault-real-16 example_8.f90
+$> gfortran -fdefault-real-16 example_08.f90
 $> ./a.out
 ~~~
 {: .language-bash}
@@ -481,7 +481,7 @@ $> ./a.out
 ~~~
 {: .output}
 ~~~
-$> gfortran -fdefault-real-16 -fdefault-double-8 example_8.f90
+$> gfortran -fdefault-real-16 -fdefault-double-8 example_08.f90
 $> ./a.out
 ~~~
 {: .language-bash}
@@ -503,7 +503,7 @@ $> ./a.out
 
 Fortran 2008 includes standard kinds ``real32``, ``real64``, ``real128`` to specify a REAL type with a storage size of 32, 64, and 128 bits. In cases where target platform does not support the particular kind a negative value is returned.
 
-This example shows the new kind parameters (``example_9.f90``).
+This example shows the new kind parameters (``example_09.f90``).
 
 ~~~
 program newkinds
@@ -535,7 +535,7 @@ end program
 The storage size of these variables is no longer affected by the compiler arguments used above.
 
 ~~~
-$> gfortran example_9.f90
+$> gfortran example_09.f90
 $> ./a.out
 ~~~
 {: .language-bash}
@@ -549,7 +549,7 @@ $> ./a.out
  ~~~
  {: .output}
  ~~~
-$> gfortran -fdefault-real-16 -fdefault-double-8 example_9.f90
+$> gfortran -fdefault-real-16 -fdefault-double-8 example_09.f90
 $> ./a.out
 ~~~
 {: .language-bash}
@@ -566,7 +566,7 @@ $> ./a.out
 You can still change those kinds during compile time using command line arguments ``-freal-4-real-10``, ``-freal-8-real-10`` and similar ones.
 
 ~~~
-$> gfortran -freal-4-real-10 -freal-8-real-10 example_9.f90
+$> gfortran -freal-4-real-10 -freal-8-real-10 example_09.f90
 $> ./a.out
 ~~~
 {: .language-bash}
@@ -581,7 +581,7 @@ $> ./a.out
 {: .output}
 
 ~~~
-$> gfortran -freal-4-real-16 -freal-8-real-16 example_9.f90
+$> gfortran -freal-4-real-16 -freal-8-real-16 example_09.f90
 $> ./a.out
 ~~~
 {: .language-bash}
@@ -664,7 +664,7 @@ end program
 
 Static arrays could be allocated on the stack instead of using the heap.
 The stack has a limited size and under some circumstances static arrays could exhaust the stack space allowed for a process.
-Consider this example (``example_11.f90``):
+Consider this example (``example_12.f90``):
 
 ~~~
 program arraymem
@@ -719,7 +719,7 @@ Now we will compile the code above with ``gfortran``, forcing the static arrays 
 Some compilers move large arrays to heap automatically so we are bypassing this protection.
 
 ~~~
-$> gfortran -fstack-arrays example_11.f90
+$> gfortran -fstack-arrays example_12.f90
 $> ./a.out
 ~~~
 {: .language-bash}
@@ -800,7 +800,7 @@ Derived types can also include other derived types
 Arrays can also be included both static and allocatables.
 Structures can be made allocatable.
 
-Consider this example that shows the use of *derived types* and its instances called *structures*.
+Consider this example that shows the use of *derived types* and its instances called *structures* (``example_13.f90``).
 
 ~~~
 program use_structs
@@ -863,13 +863,343 @@ end program
 ~~~
 {: .language-fortran}
 
-## Functions, Subroutines and Modules
+## Functions and Subroutines
 
 A simple program will have only variable declarations and statements.
 The next level of organization is to encapsulate variable declarations and statements as an entity (function or subroutine) that can be reused inside the main program, other programs or other
 function or subroutine.
 
 Another advantage of moving code inside functions or subroutines is that you hide variables inside the scope of the function, allowing the reuse of the names in other routines without collisions.
+
+Fortran makes the distinction between ``function`` and ``subroutine``.
+This is different from other programming languages such as C/C++, Python, Java.
+In purely functional programming languages (e.g. Haskell) only functions are allowed.
+Subroutines have arguments that make no distinction between input and output and input variables can be modified as side-effects.
+
+Fortran Functions are simpler compared to subroutines.
+A function return a single value that is predefined.
+Functions can be invoked from within expressions, like a write statement, inside an if declaration and other statements.
+
+A subroutine does not return a value, but can return many values via its changing one or more arguments.
+Subroutines can only be used using the keyword ``call``.
+
+This is one example of a code with one function and one subroutine.
+(``example_14.f90``)
+
+~~~
+subroutine sub_one(ix, oy, ioz)
+   real, intent(in) :: ix ! input
+   real, intent(out)  :: oy ! output
+   real, intent(inout) :: ioz ! input and output
+
+   oy = sqrt(real(ix)) + ioz
+   ioz = max(ix, oy)
+
+end subroutine
+
+function func(i) result(j)
+   integer, intent(in) :: i ! input
+   integer              :: j ! output
+
+   j = sqrt(real(i)) + log(real(i))
+end function
+
+program main
+
+   implicit none
+
+   integer :: i
+   integer :: func
+   real :: ix, oy, ioz
+
+   ix = 10.0
+   ioz = 20.0
+
+   i = huge(1)
+   print *, "i=", i, char(10), " sqrt(i) + log(i) =", func(i)
+
+   print *, 'Before:', ix, oy, ioz
+   call sub_one(ix, oy, ioz)
+   print *, 'After :', ix, oy, ioz
+
+end program
+~~~
+{: .language-fortran}
+
+It is a good practice to declare the intent of variable with ``ìn``, ``out`` or ``inout``.
+Using them could help during debugging in case variables became modified unintentionally.
+
+## Modules
+
+Modules is the next natural level of abstraction.
+Modules can contain various kinds of things like
+
+  * Variables: Scalars, arrays, parameters, structures.
+  * Derived Types
+  * Subprograms like *Functions* and *Subroutines*
+  * Objects (Instances of other modules)
+  * Submodules (Fortran 2008)
+
+This small example uses a module to contain constants.
+(``example_15.f90``)
+
+~~~
+module mod_constants
+
+   use iso_fortran_env
+
+   implicit none
+
+   real, parameter :: pi = 3.1415926536
+   real, parameter :: e = 2.7182818285
+
+   real(kind=real64), parameter :: elementary_charge = 1.602176634D-19
+   real(kind=real64), parameter :: G_grav = 6.67430D-11     ! Gravitational constant
+   real(kind=real64), parameter :: h_plank = 6.62607015D-34  ! Plank constant
+   real(kind=real64), parameter :: c_light = 299792458       ! Light Speed
+   real(kind=real64), parameter :: vacuum_electric_permittivity = 8.8541878128D-12
+   real(kind=real64), parameter :: vacuum_magnetic_permeability = 1.25663706212D-6
+   real(kind=real64), parameter :: electron_mass = 9.1093837015D-31
+   real(kind=real64), parameter :: fine_structure = 7.2973525693D-3
+   real(kind=real64), parameter :: Josephson = 483597.8484
+   real(kind=real64), parameter :: Rydberg = 10973731.568160
+   real(kind=real64), parameter :: von_Klitzing = 25812.80745
+
+contains
+
+   subroutine show_consts()
+      print *, "G = ", G_grav
+      print *, "h = ", h_plank
+      print *, "c = ", c_light
+   end subroutine show_consts
+
+end module mod_constants
+
+program physical_constants
+
+   use mod_constants
+
+   implicit none
+
+   print *, sqrt(2.0_real64)
+   print *, sqrt(2.0_real128)
+   print *, 'Inverse of Fine Structure constant = ', 1.0_real64 / fine_structure
+
+   call show_consts()
+
+end program
+~~~
+{: .language-}
+
+The content of a module is accessible after the statement ``use <module name>``
+By default all variables, subroutines and functions inside a module are visible, but restrictions can be made using the ``private`` statement before the routine and it can only be used by other subroutines on the same module but not by routines that ``use`` the module. The variable attribute public can also be used to make exceptions after the private statement
+
+Example of ``public`` and ``private`` variables and functions.
+It will be very similar for subroutines and data types.
+ (``example_16.f90``):
+
+~~~
+module mod_public_private
+
+   implicit none
+
+   public
+
+   real, parameter :: pi = 3.141592653, &
+                      c = 299792458, &
+                      e = 2.7182818285
+
+   real, private :: rad_2_deg = 180.0/pi
+   real, private :: deg_2_rad = pi/180.0
+
+   private :: sin_deg, cos_deg
+
+   public :: tan_deg
+
+contains
+
+   function sin_deg(x) result(y)
+      real, intent(in) :: x ! input
+      real             :: y ! output
+      y = sin(x*deg_2_rad)
+   end function
+
+   function cos_deg(x) result(y)
+      real, intent(in) :: x ! input
+      real             :: y ! output
+      y = cos(x*deg_2_rad)
+   end function
+
+   function tan_deg(x) result(y)
+      real, intent(in) :: x ! input
+      real             :: y ! output
+      y = sin_deg(x)/cos_deg(x)
+   end function
+
+end module mod_public_private
+
+program priv_pub_module
+
+   use mod_public_private
+
+   implicit none
+
+   real :: r = 2.0
+
+   print *, 'Area = ', pi*r**2
+
+   ! This print will not work
+   ! The variables rad_2_deg and deg_2_rad are private
+   !print *, rad_2_deg, deg_2_rad
+
+   print *, 'Tan(45) ', tan_deg(45.0)
+
+   ! These lines will not work as functions are private
+   !print *, 'Sin(45) ', sin_rad(45.0)
+   !print *, 'Cos(45) ', cos_rad(45.0)
+
+end program
+~~~
+{: .language-fortran}
+
+## Modules: attribute ``protected`` and renaming of variables
+
+A public variable is visible by routines that use the module.
+Private variables will not.
+There are cases were the value needs to be visible but not changed outside.
+That is the purpose of ``private`` attribute.
+
+Another option is for variables be renamed when the module is loaded allowing codes outside to use the name of the variable for other purposes.
+
+This example combine both features (``example_17.f90``):
+
+~~~
+module module_privs
+
+   implicit none
+
+   integer, parameter, private :: sp = selected_real_kind(6, 37)
+   integer, parameter, private :: dp = selected_real_kind(15, 307)
+   integer, parameter, private :: qp = selected_real_kind(33, 4931)
+
+   real(kind=sp), protected :: pi_sigl = &
+   3.141592653589793238462643383279502884197169399375105820974944592307&
+   &8164062862089986280348253421170679821480865132823066470938446_sp
+   real(kind=dp), protected :: pi_dble = &
+   3.141592653589793238462643383279502884197169399375105820974944592307&
+   &8164062862089986280348253421170679821480865132823066470938446_dp
+   real(kind=qp), protected :: pi_quad = &
+   3.141592653589793238462643383279502884197169399375105820974944592307&
+   &8164062862089986280348253421170679821480865132823066470938446_qp
+   real :: x = 50.25
+   real, protected :: x_prot = 512.125
+   real :: y = 3.0
+
+contains
+
+   subroutine show_pi_3()
+      print *, 'PI with  6 digits', kind(pi_sigl), pi_sigl
+      print *, 'PI with 15 digits', kind(pi_dble), pi_dble
+      print *, 'PI with 33 digits', kind(pi_quad), pi_quad
+   end subroutine show_pi_3
+
+end module module_privs
+
+program main
+
+   use module_privs, my_y => y
+
+   implicit none
+
+   call show_pi_3()
+
+   print *, 'x from inside the module : ', x
+   x = 25.50
+   print *, 'x changed outside module : ', x
+
+   print *, 'x_prot:', x_prot
+   ! This variable is protected and cannot be changed
+   ! Uncommenting the line below will not compile
+   !x_prot = 125.512
+   print *, 'x_prot:', x_prot
+
+   ! The variable 'y' is not visible as it was renamed
+   !print *, y
+   print *, 'my_y:', my_y
+
+end program main
+~~~
+{: .language-fortran}
+
+## Optional arguments
+
+In Modern Fortran (since Fortran 90), optional arguments can be part of a subroutine.
+They must be declared as optional in the calling function (either through a module or an explicit interface).
+In several implementations of old Fortran 77 it was possible to simply leave out the last argument, if it was a scalar number
+This behavior, was not part of the Fortran standard but used by some programmers.
+Now the ``optional`` attribute must be declared explicitly.
+
+This example explores several options for optional variables.
+(``example_19.f90``):
+
+~~~
+module my_module
+
+   implicit none
+
+   real :: d_default = -1.125
+
+contains
+
+   subroutine calc(a, b, c, d, e)
+      real :: a, b, c, e
+      real, optional :: d
+      real :: dd
+      if (present(d)) then
+         dd = d
+      else
+         print *, 'd argument not present, using default'
+         dd = d_default
+      end if
+
+      print '(5(F7.3))', a,b,c,dd,e
+
+   end subroutine
+
+end module
+
+program main
+
+   use my_module
+
+   implicit none
+
+   call calc(1., 2., 3., 4., 5.)
+   call calc(1., 2., 3., e=5.)
+   call calc(a=1., b=2., c=3., d=4., e=5.)
+   call calc(b=2., d=4., a=1., c=3., e=5.)
+   call calc(1., 2., 3., d=4., e=5.)
+   call calc(1., 2., d=4., c=3., e=5.)
+
+end program
+~~~
+{: .language-fortran}
+
+## Array syntax
+
+One of the strengths of Fortran is scientific computing and High-Performance Computing.
+Central to HPC programming are arrays and Fortran is particularly good in expressing operations with arrays.
+
+Many operations that require loops in C are done in one operation in Fortran, those are implicit loops hidden in the language expression.
+
+Conditions for operations with arrays are:
+
+  * The left and right side of an assignment must me conformable.
+     That means that the same number of elements are involved and they match in dimension
+
+  * Operations with strides are valid if the are also conformable.
+
+Example (``example_20.f90``):
 
 
 

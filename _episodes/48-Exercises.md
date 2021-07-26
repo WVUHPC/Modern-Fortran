@@ -1,7 +1,7 @@
 ---
-title: "Expressions"
-teaching: 30
-exercises: 0
+title: "Exercises"
+teaching: 0
+exercises: 60
 questions:
 - "Key question (FIXME)"
 objectives:

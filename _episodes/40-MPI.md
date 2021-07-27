@@ -133,6 +133,292 @@ You can use either one.
 ``mpirun`` is a command implemented by many MPI implementations.
 As this one is not standardized, there are often subtle differences between implementations.
 
+## First example of an MPI process
+
+The example below is a fairly simple code that is bit more elaborated than a dumb "Hello World" program.
+
+The code will on a number of processes.
+We are using 8 for the output.
+Lets see first the code and compile it and after we discuss the calls that are introduced here (``mpif90 example_01.f90``).
+
+~~~
+module time_mgt
+
+contains
+
+   subroutine timestamp()
+
+      use, intrinsic :: iso_fortran_env
+
+      implicit none
+
+      character(len=8) :: ampm
+      integer(kind=int32) :: d
+      integer(kind=int32) :: h
+      integer(kind=int32) :: m
+      integer(kind=int32) :: mm
+      character(len=9), parameter, dimension(12) :: month = (/ &
+                                                    'January  ', 'February ', &
+                                                    'March    ', 'April    ', &
+                                                    'May      ', 'June     ', &
+                                                    'July     ', 'August   ', &
+                                                    'September', 'October  ', &
+                                                    'November ', 'December '/)
+      integer(kind=4) :: n
+      integer(kind=4) :: s
+      integer(kind=4) :: values(8)
+      integer(kind=4) :: y
+
+      call date_and_time(values=values)
+
+      y = values(1)
+      m = values(2)
+      d = values(3)
+      h = values(5)
+      n = values(6)
+      s = values(7)
+      mm = values(8)
+
+      if (h < 12) then
+         ampm = 'AM'
+      else if (h == 12) then
+         if (n == 0 .and. s == 0) then
+            ampm = 'Noon'
+         else
+            ampm = 'PM'
+         end if
+      else
+         h = h - 12
+         if (h < 12) then
+            ampm = 'PM'
+         else if (h == 12) then
+            if (n == 0 .and. s == 0) then
+               ampm = 'Midnight'
+            else
+               ampm = 'AM'
+            end if
+         end if
+      end if
+
+      write (*, '(i2,1x,a,1x,i4,2x,i2,a1,i2.2,a1,i2.2,a1,i3.3,1x,a)') &
+         d, trim(month(m)), y, h, ':', n, ':', s, '.', mm, trim(ampm)
+
+      return
+   end subroutine
+
+end module
+
+program main
+
+   use, intrinsic :: iso_fortran_env
+   use time_mgt
+   use mpi_f08
+
+   implicit none
+
+   integer, parameter :: n=1000000
+   integer(kind=int32) :: i
+   integer(kind=int32) :: ierror ! To control errors in MPI calls
+   integer(kind=int32) :: rank   ! Unique number received by each process
+   integer(kind=int32) :: num_proc ! Total number of processes
+   real(kind=real64)   :: wtime
+   real(kind=real64), allocatable, dimension(:) :: array
+
+   ! Initialize MPI. This must be the first MPI call
+   call MPI_Init(ierror)
+
+   ! Get the number of processes
+   call MPI_Comm_size(MPI_COMM_WORLD, num_proc, ierror)
+
+   ! Get the individual process rank
+   call MPI_Comm_rank(MPI_COMM_WORLD, rank, ierror)
+
+   if (rank == 0) then
+      wtime = MPI_Wtime()
+
+      call timestamp()
+      ! Only rank = 0 print this
+      write (*, '(a)') ''
+      write (*, '(a,i2,2x,a)') 'RANK:', rank, ' Master process reporting:'
+      write (*, '(a,i2,2x,a,i3)') 'RANK:', rank, &
+         ' The number of MPI processes is ', num_proc
+
+   else
+
+      ! Every MPI process will print this message.
+      write (*, '(a,i2,2x,a,i8)') 'RANK:', rank, &
+      ' Allocating array of size:', rank*n
+
+      ! Each rank will allocate an array of a different size
+      allocate (array(rank*n))
+      do i = 1, size(array)
+         array(i) = log(real(rank))+sqrt(real(i))
+      end do
+
+      ! Reporting sum of array
+      write (*, '(a,i2,2x,a,e12.3)') 'RANK:', rank, ' Sum of array:', sum(array)
+
+   end if
+
+   if (rank == 0) then
+      write (*, '(a)') ''
+      write (*, '(a,i2,2x,a)') 'RANK:', rank, ' Master process reporting:'
+      write (*, '(a,i2,2x,a)') 'RANK:', rank, &
+      ' Normal end of execution for master'
+
+      wtime = MPI_Wtime() - wtime
+      write (*, '(a)') ''
+      write (*, '(a,i2,2x,a,g14.6,a)') &
+         'RANK:', rank, ' Elapsed wall clock time = ', wtime, ' seconds.'
+      write (*, '(a)') ''
+
+   end if
+
+   ! No more MPI calls after Finalize
+   call MPI_Finalize(ierror)
+
+   ! Ranks are intrinsic to each process and this conditional is legal
+   if (rank == 0) then
+      write (*, '(a)') ''
+      write (*, '(a,i2,2x,a)') 'RANK:', rank, ' Master process reporting:'
+      write (*, '(a,i2,2x,a)') 'RANK:', rank, ' Normal end of execution for all'
+
+      call timestamp()
+   end if
+
+   stop
+
+end program
+~~~
+{: .language-fortran}
+
+### Compiling the example
+
+To compile this code we need a fortran compiler and a MPI implementation.
+We can choose among several combinations of compilers and MPI implementations:
+
+Using GCC 11 and OpenMPI 4.1.1 use:
+
+~~~
+$> module load lang/gcc/11.1.0 parallel/openmpi/4.1.1_gcc111
+$> mpif90 example_01.f90
+$> mpirun -mca btl ofi -np 8 ./a.out
+~~~
+{: .language-bash}
+
+Using NVIDIA HPC which includes OpenMPI 3.15 the line below.
+The extra arguments are optional and they prevent some messages from being displayed.
+The messages showing ``ieee_inexact`` occurs even if if arrays are null.
+
+~~~
+$> module load lang/nvidia/nvhpc/21.3
+$> mpif90 -Kieee -Ktrap=none example_01.f90
+$> mpirun -np 8 --mca mpi_cuda_support 0 -mca mtl_base_verbose 1 -mca orte_base_help_aggregate 0 -mca btl openib ./a.out
+~~~
+{: .language-bash}
+
+Another alternative is using Intel MPI compilers and Intel MPI.
+
+~~~
+$> module load compiler/2021.2.0 mpi/2021.2.0
+$>  mpiifort example_01.f90
+$>  mpirun -np 8 ./a.out
+~~~
+{: .language-bash}
+
+The output varies but in general you will see something like:
+
+~~~
+26 July 2021   5:51:47.252 PM
+
+RANK: 0   Master process reporting:
+RANK: 0   The number of MPI processes is   8
+
+RANK: 0   Master process reporting:
+RANK: 0   Normal end of execution for master
+RANK: 1   Allocating array of size: 1000000
+RANK: 1   Sum of array:   0.667E+09
+RANK: 2   Allocating array of size: 2000000
+RANK: 3   Allocating array of size: 3000000
+RANK: 4   Allocating array of size: 4000000
+RANK: 5   Allocating array of size: 5000000
+RANK: 6   Allocating array of size: 6000000
+RANK: 7   Allocating array of size: 7000000
+RANK: 2   Sum of array:   0.189E+10
+RANK: 4   Sum of array:   0.534E+10
+RANK: 3   Sum of array:   0.347E+10
+RANK: 5   Sum of array:   0.746E+10
+RANK: 6   Sum of array:   0.981E+10
+RANK: 7   Sum of array:   0.124E+11
+
+RANK: 0   Master process reporting:
+RANK: 0   Normal end of execution for all
+
+RANK: 0   Elapsed wall clock time =   0.145266     seconds.
+
+26 July 2021   5:51:47.397 PM
+~~~
+{: .output}
+
+Notice that the output does not necessary follows a clear order, each process runs independent and how the output is collected and displayed depends on the MPI runtime executable.
+
+### The first MPI lines
+
+Any Fortran code that uses MPI needs to load the mpi module
+
+~~~
+use mpi_f08
+~~~
+
+We are using the modern module ``mpi_f08``
+
+This code will expose all the constants, variables and routines that are declared in the MPI 3.1 standard.
+
+MPI defines three methods of Fortran support:
+
+  1. ``use mpi_f08``: It requires compile-time argument checking with unique MPI handle types and provides techniques to fully solve the optimization problems with nonblocking calls. This is the only Fortran support method that is consistent with the Fortran standard (Fortran 2008 + TS 29113 and later). This method is highly recommended for all MPI applications.
+
+  2. ``use mpi``: This method is described in Section Fortran Support Through the mpi Module and requires compile-time argument checking. Handles are defined as INTEGER. This Fortran support method is inconsistent with the Fortran standard, and its use is therefore not recommended.
+
+  3. ``INCLUDE 'mpif.h'``: The use of the include file mpif.h is strongly discouraged starting with MPI-3.0, because this method neither guarantees compile-time argument checking nor provides sufficient techniques to solve the optimization problems with nonblocking calls, and is therefore inconsistent with the Fortran standard.
+
+All modern compilers support most of Fortran 2008 and MPI implementations support most MPI 3.0. In older examples you can find these other methods of accessing MPI from Fortran.
+
+Regard
+The first 3 calls that we are using are:
+
+~~~
+! Initialize MPI. This must be the first MPI call
+call MPI_Init(ierror)
+
+! Get the number of processes
+call MPI_Comm_size(MPI_COMM_WORLD, num_proc, ierror)
+
+! Get the individual process rank
+call MPI_Comm_rank(MPI_COMM_WORLD, rank, ierror)
+~~~
+{: .language-fortran}
+
+``MPI_Init`` must be the first MPI call ever in the code.
+It prepares the environment including the variables that we will collect in the next two calls.
+
+``MPI_Comm_size`` and ``MPI_Comm_rank`` return the number of processes in the MPI execution and the particular rank assigned to each process.
+
+All processes created after ``mpirun`` are almost identical, start executing the same code.
+The only difference is the rank, an integer that starts in zero as it is commonly used in C and ends in N-1 where N is the number of processes requested in the command line.
+Notice that an MPI code does not know in compile time, how many processes it will run, programmers need to code knowing that the code could run with one rank or thousands even millions of processes.
+
+Another MPI call is ``MPI_Wtime()`` that returns an elapsed time on the calling processor, the return in fortran is a float in ``DOUBLE PRECISION``. We use this to compute the wall clock for rank zero.
+Notice that rank zero is not allocating any array and will finish very quickly.
+
+Other ranks will allocate matrices of increasing size based on their rank.
+The arrays are populated and the sum computed.
+Using 8 processes, ranks 1 to 7 will be allocating independent arrays that are populated and the sum computed.
+
+This very simple example is no doing any communication between processes and each rank is following the the execution until it encounters the last call.
+`` MPI_Finalize`` is the last call of any MPI program.
+No more MPI calls can appear after this.
+
 
 
 

@@ -17,7 +17,7 @@ contains
       integer(kind=int32), parameter :: decimal_precision = 5
       integer(kind=int32), parameter :: exponent_range = 300
       integer(kind=int32), parameter :: dp = &
-      selected_real_kind(decimal_precision, exponent_range)
+                                        selected_real_kind(decimal_precision, exponent_range)
 
       integer(kind=int32) :: source, destin
       integer(kind=int32) :: ierror
@@ -32,19 +32,20 @@ contains
       type(MPI_Status)   :: mpistatus
       type(MPI_Datatype) :: realtype
 
-
       call MPI_Type_Create_F90_real(decimal_precision, exponent_range, &
                                     realtype, ierror)
+      !if (ierror == MPI_SUCCESS) print *, 'MPI_Type_Create_F90_real'
+
       !real(kind=real64), allocatable :: x(:)
 
       ! Old way of creating arrays
       !n_test = (/ 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000 /)
-      n_test = [ (10**i, i=1, n_test_num) ]
+      n_test = [(10**i, i=1, n_test_num)]
 
       if (rank == 0) then
          write (*, '(a)') ' '
          write (*, '(a,i3)') ' RANK 0: Number of cases:    ', test_num
-         write (*, '(a,i3)') ' RANK 0: Arrays of KIND:     ', real64 
+         write (*, '(a,i3)') ' RANK 0: Arrays of KIND:     ', real64
          write (*, '(a,i3)') ' RANK 0: Number of processes:', num_proc
          write (*, '(a)') ' '
          write (*, '(a11,a14,a14,a14)') 'N', 'T min', 'T max', 'T ave'
@@ -77,7 +78,11 @@ contains
 
                wtime = MPI_Wtime()
                call MPI_Send(x, n, realtype, destin, 0, MPI_COMM_WORLD, ierror)
+               !if (ierror == MPI_SUCCESS) print *, 'MPI_Send'
+
                call MPI_Recv(x, n, realtype, source, 0, MPI_COMM_WORLD, mpistatus, ierror)
+               !if (ierror == MPI_SUCCESS) print *, 'MPI_Recv'
+
                wtime = MPI_Wtime() - wtime
 
                ! Record the time it took.
@@ -91,18 +96,22 @@ contains
 
             write (*, '(2x,i9,2x,f12.7,2x,f12.7,2x,f12.7)') n, tmin, tmax, tave
 
-         ! All ranks > 0: Receive first from rank-1, 
-         ! then send to rank+1 or 0 if it is the last rank
+            ! All ranks > 0: Receive first from rank-1,
+            ! then send to rank+1 or 0 if it is the last rank
          else
 
             source = rank - 1
-            destin = mod(rank + 1, num_proc) 
-            
+            destin = mod(rank + 1, num_proc)
+
             ! Loop to collect statistics of time to cycle
             do test = 1, test_num
                ! ---> Recv ++++ Send --->
                call MPI_Recv(x, n, realtype, source, 0, MPI_COMM_WORLD, mpistatus, ierror)
+               !if (ierror == MPI_SUCCESS) print *, 'MPI_Recv'
+
                call MPI_Send(x, n, realtype, destin, 0, MPI_COMM_WORLD, ierror)
+               !if (ierror == MPI_SUCCESS) print *, 'MPI_Send'
+
             end do
 
          end if
@@ -130,12 +139,15 @@ program main
 
    ! First MPI call
    call MPI_Init(ierror)
+   !if (ierror == MPI_SUCCESS) print *, 'MPI_Init'
 
    ! Get the number of processes (num_proc)
    call MPI_Comm_size(MPI_COMM_WORLD, num_proc, ierror)
+   !if (ierror == MPI_SUCCESS) print *, 'MPI_Comm_size'
 
    ! Get the individual process (rank)
    call MPI_Comm_rank(MPI_COMM_WORLD, rank, ierror)
+   !if (ierror == MPI_SUCCESS) print *, 'MPI_Comm_rank'
 
    if (rank == 0) then
       write (*, '(a)') ' '
@@ -147,6 +159,7 @@ program main
 
    ! Last MPI call
    call MPI_Finalize(ierror)
+   !if (ierror == MPI_SUCCESS) print *, 'MPI_Finalize'
 
    ! Terminate.
    if (rank == 0) then

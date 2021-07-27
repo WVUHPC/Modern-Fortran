@@ -297,12 +297,12 @@ end program
 To compile this code we need a fortran compiler and a MPI implementation.
 We can choose among several combinations of compilers and MPI implementations:
 
-Using GCC 11 and OpenMPI use:
+Using GCC 11 and OpenMPI 4.1.1 use:
 
 ~~~
-$> module load lang/gcc/11.1.0 parallel/openmpi/3.1.6_gcc111
+$> module load lang/gcc/11.1.0 parallel/openmpi/4.1.1_gcc111
 $> mpif90 example_01.f90
-$> mpirun -mca btl tcp -np 8 ./a.out
+$> mpirun -mca btl ofi -np 8 ./a.out
 ~~~
 {: .language-bash}
 
@@ -384,6 +384,7 @@ MPI defines three methods of Fortran support:
 
 All modern compilers support most of Fortran 2008 and MPI implementations support most MPI 3.0. In older examples you can find these other methods of accessing MPI from Fortran.
 
+Regard
 The first 3 calls that we are using are:
 
 ~~~

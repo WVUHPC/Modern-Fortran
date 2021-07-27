@@ -713,6 +713,12 @@ Just as small window on the possibilities of Sending data, this table summarizes
 |------|------------|-------------|
 | **Ready Mode** | ``MPI_Rsend`` | Will only work if matching receive is already waiting. Must be well synchronized or behavior is undefined.
 
+## Broadcasting and Reducing
 
+So far we have used what is call a point-to-point communication.
+Calling ``MPI_Send`` and ``MPI_Recv`` will send and receive data to/from a single receiver/sender.
+Now we will explore the other extreme, one sending to all and all collecting data to one.
+
+ 
 
 {% include links.md %}

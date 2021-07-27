@@ -68,7 +68,7 @@ program main
 
    use, intrinsic :: iso_fortran_env
    use time_mgt
-   use mpi
+   use mpi_f08
 
    implicit none
 
@@ -122,6 +122,12 @@ program main
       write (*, '(a,i2,2x,a)') 'RANK:', rank, &
       ' Normal end of execution for master'
 
+      wtime = MPI_Wtime() - wtime
+      write (*, '(a)') ''
+      write (*, '(a,i2,2x,a,g14.6,a)') &
+         'RANK:', rank, ' Elapsed wall clock time = ', wtime, ' seconds.'
+      write (*, '(a)') ''
+
    end if
 
    ! No more MPI calls after Finalize
@@ -132,12 +138,6 @@ program main
       write (*, '(a)') ''
       write (*, '(a,i2,2x,a)') 'RANK:', rank, ' Master process reporting:'
       write (*, '(a,i2,2x,a)') 'RANK:', rank, ' Normal end of execution for all'
-
-      wtime = MPI_Wtime() - wtime
-      write (*, '(a)') ''
-      write (*, '(a,i2,2x,a,g14.6,a)') &
-         'RANK:', rank, ' Elapsed wall clock time = ', wtime, ' seconds.'
-      write (*, '(a)') ''
 
       call timestamp()
    end if

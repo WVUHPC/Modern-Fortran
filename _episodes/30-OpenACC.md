@@ -1,7 +1,7 @@
 ---
-title: "OpenACC"
+title: "OpenACC: Parallel Accelerators"
 start: 840
-teaching: 30
+teaching: 60
 exercises: 0
 questions:
 - "Key question (FIXME)"

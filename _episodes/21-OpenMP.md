@@ -1,6 +1,6 @@
 ---
-title: "OpenMP"
-teaching: 30
+title: "OpenMP: Parallel Multiprocessing"
+teaching: 60
 exercises: 0
 questions:
 - "Key question (FIXME)"

@@ -1,7 +1,7 @@
 ---
-title: "Distributed Computing: MPI"
+title: "MPI: Message Passing Interface"
 start: 840
-teaching: 30
+teaching: 60
 exercises: 0
 questions:
 - "Key question (FIXME)"
@@ -365,7 +365,7 @@ In our first example we consider a code that allocate arrays of various sizes an
 Each process was in fact independent of each other and not communication was involved.
 For our next example we will consider a simple communication between processes.
 
-Consider the following code (``example_012.f90``)
+Consider the following code (``example_02.f90``)
 
 ~~~
 module mod_ring
@@ -717,8 +717,344 @@ Just as small window on the possibilities of Sending data, this table summarizes
 
 So far we have used what is call a point-to-point communication.
 Calling ``MPI_Send`` and ``MPI_Recv`` will send and receive data to/from a single receiver/sender.
-Now we will explore the other extreme, one sending to all and all collecting data to one.
+Now we will explore the other extreme, one sending to all and all collecting data to one rank.
 
- 
+Consider our third example (``example_03.f90``)
+
+~~~
+module mod_func
+
+   use, intrinsic :: iso_fortran_env
+
+   real(kind=real64), parameter :: f1_exact = 61.675091159487667993149630_real64
+   real(kind=real64), parameter :: pi = 3.141592653589793238462643_real64
+
+contains
+
+   function f1(x)
+
+      use, intrinsic :: iso_fortran_env
+
+      implicit none
+
+      real(kind=real64) :: f1
+      real(kind=real64) :: x
+
+      f1 = log(pi*x)*sin(pi*x)**2 + x
+
+      return
+
+   end function
+
+   function f2(x)
+
+      use, intrinsic :: iso_fortran_env
+
+      implicit none
+
+      real(kind=real64) :: f2
+      real(kind=real64) :: x
+
+      f2 = 50.0D+00/(pi*(2500.0D+00*x*x + 1.0D+00))
+
+      return
+
+   end function
+
+end module mod_func
+
+program main
+
+   use, intrinsic :: iso_fortran_env
+   use mod_func
+   use mpi_f08
+
+   implicit none
+
+   integer(kind=int32)  :: i, ierror
+   integer(kind=int32)  :: master
+   integer(kind=int32)  :: p
+   integer(kind=int32)  :: num_proc, rank
+   integer(kind=int32)  :: n, my_n
+   integer(kind=int32)  :: source, destin
+   integer(kind=int32)  :: tag
+
+   real(kind=real64)    :: a, b, my_a, my_b
+   real(kind=real64)    :: error
+   real(kind=real64)    :: total
+   real(kind=real64)    :: wtime
+   real(kind=real64)    :: x
+   real(kind=real64)    :: my_total
+   real(kind=real64)    :: exact
+   type(MPI_Status)     :: mpistatus
+
+   a = 1.0_real64
+   b = 10.0_real64
+   n = huge(1_int32)
+
+   exact = f1_exact
+
+   master = 0
+
+   call MPI_Init(ierror)
+
+   call MPI_Comm_size(MPI_COMM_WORLD, num_proc, ierror)
+
+   call MPI_Comm_rank(MPI_COMM_WORLD, rank, ierror)
+
+   ! RANK 0 reads in the quadrature rule, and parcels out the
+   ! evaluation points among the processes.
+   if (rank == 0) then
+
+      ! We want N to be the total number of evaluations.
+      ! If necessary, we adjust N to be divisible by the number of processors.
+      my_n = n/(num_proc - 1)
+      n = (num_proc - 1)*my_n
+
+      wtime = MPI_Wtime()
+
+      write (*, '(a)') ' '
+      write (*, '(a)') '  Quadrature of f(x) from A to B.'
+      write (*, '(a)') '  f(x) = log(pi*x)*sin(pi*x)**2 + x'
+      write (*, '(a)') ' '
+      write (*, '(a,g14.6)') '  A        = ', a
+      write (*, '(a,g14.6)') '  B        = ', b
+      write (*, '(a,i12)') '  N        = ', n
+      write (*, '(a,g24.16)') '  Exact    = ', exact
+      write (*, '(a)') ' '
+   end if
+
+   ! Rank 0 has the computed value for my_n
+   source = master
+
+   ! Share with all the ranks the number of elements that each rank will compute
+   call MPI_Bcast(my_n, 1, MPI_INTEGER, source, MPI_COMM_WORLD, ierror)
+
+   ! Rank 0 assigns each process a subinterval of [A,B].
+   if (rank == 0) then
+
+      do p = 1, num_proc - 1
+
+         my_a = (real(num_proc - p, kind=real64)*a &
+                 + real(p - 1, kind=real64)*b) &
+                /real(num_proc - 1, kind=real64)
+
+         destin = p
+         tag = 1
+         call MPI_Send(my_a, 1, MPI_DOUBLE_PRECISION, destin, tag, &
+                       MPI_COMM_WORLD, ierror)
+
+         my_b = (real(num_proc - p - 1, kind=real64)*a &
+                 + real(p, kind=real64)*b) &
+                /real(num_proc - 1, kind=real64)
+
+         destin = p
+         tag = 2
+         call MPI_Send(my_b, 1, MPI_DOUBLE_PRECISION, destin, tag, &
+                       MPI_COMM_WORLD, ierror)
+
+      end do
+
+      total = 0.0D+00
+      my_total = 0.0D+00
+
+!  Processes receive MY_A, MY_B, and compute their part of the integral.
+   else
+
+      source = master
+      tag = 1
+
+      call MPI_Recv(my_a, 1, MPI_DOUBLE_PRECISION, source, tag, &
+                    MPI_COMM_WORLD, mpistatus, ierror)
+
+      source = master
+      tag = 2
+
+      call MPI_Recv(my_b, 1, MPI_DOUBLE_PRECISION, source, tag, &
+                    MPI_COMM_WORLD, mpistatus, ierror)
+
+      my_total = 0.0D+00
+      do i = 1, my_n
+         x = (real(my_n - i, kind=real64)*my_a &
+              + real(i - 1, kind=real64)*my_b) &
+             /real(my_n - 1, kind=real64)
+         my_total = my_total + f1(x)
+      end do
+
+      my_total = (my_b - my_a)*my_total/real(my_n, kind=real64)
+
+      write (*, '(a,i3,a,g14.6)') &
+         '  RANK: ', rank, ' Partial Quadrature: ', my_total
+
+   end if
+
+   ! Each process sends its value of MY_TOTAL to the master process, to
+   ! be summed in TOTAL.
+   call MPI_Reduce(my_total, total, 1, MPI_DOUBLE_PRECISION, &
+                   MPI_SUM, master, MPI_COMM_WORLD, ierror)
+
+   ! Report the results.
+   if (rank == master) then
+
+      error = abs(total - exact)
+      wtime = MPI_Wtime() - wtime
+
+      write (*, '(a)') ' '
+      write (*, '(a,g24.16)') '  Estimate = ', total
+      write (*, '(a,g14.6)') '  Error    = ', error
+      write (*, '(a,g14.6)') '  Time     = ', wtime
+
+   end if
+
+!  Terminate MPI.
+   call MPI_Finalize(ierror)
+
+!  Terminate.
+   if (rank == master) then
+      write (*, '(a)') ' '
+      write (*, '(a)') '  Normal end of execution.'
+   end if
+
+   stop
+
+end program
+~~~
+{: .language-fortran}
+
+This program computes the integral of a function using the most basic method of quadratures.
+The code divides the range of integration in rectangles and sums the area of rectangle and collects all the partial areas to compute the area of the function that is been integrated.
+
+This is a very trivial problem from the parallelization point of view as no real communication needs to take place when each rank is computing the partial sums assigned to it.
+However, this is a good example to show two subroutines that are very useful in MPI.
+
+The first new routine is:
+
+~~~
+call MPI_Bcast(my_n, 1, MPI_INTEGER, source, MPI_COMM_WORLD, ierror)
+~~~
+{: .language-fortran}
+
+``MPI_Bcast`` is a routine that is call by all the ranks in the communicator and it takes one value ``my_n`` from the source (rank 0 in this case) and distributes the value to ensure that all the ranks fill the variable with that value.
+
+Notice that only rank 0 is computing the value of ``my_n`` the first time.
+This value is the number of rectangular stripes that each rank will compute individually.
+
+The structure of this routine is very similar to a ``MPI_Send``.
+The first 3 arguments are the same.
+The argument ``source`` refers to the rank that has the value that will be propagated.
+There is no need for a ``tag``, so the last 2 arguments are the communicator that in our case is the global ``MPI_COMM_WORLD`` and the integer for errors.
+
+The individual ``my_a`` and ``my_b`` are sent with point-to-point communications.
+Each rank computes the partial quadrature and the partial values are collected with our next new routine in MPI.
+
+~~~
+call MPI_Reduce(my_total, total, 1, MPI_DOUBLE_PRECISION, &
+                MPI_SUM, master, MPI_COMM_WORLD, ierror)
+~~~
+{: .language-fortran}
+
+This is powerful routine.
+It takes the contributions of all the values ``my_total`` and uses the operation ``MPI_SUM`` to ensure that the value ``total`` on destination (rank 0) contains the sum of all the partial contributions.
+
+``MPI_SUM`` is just one of the several functions that can be used to reduce values. This is a list of supported functions
+
+| Name             |   Meaning        |
+|------------------|------------------|
+| MPI_MAX          |   maximum |
+| MPI_MIN          |   minimum |
+| MPI_SUM          |   sum |
+| MPI_PROD         |   product |
+| MPI_LAND         |   logical and |
+| MPI_BAND         |   bit-wise and |
+| MPI_LOR          |   logical or |
+| MPI_BOR          |   bit-wise or |
+| MPI_LXOR         |   logical xor |
+| MPI_BXOR         |   bit-wise xor |
+| MPI_MAXLOC       |   max value and location |
+| MPI_MINLOC       |   min value and location |
+
+
+## Summary and Final remarks
+
+So far we have introduce 8 MPI routines that are very commonly use.
+
+We are collecting here the Fortran 2008 syntax for each of them
+
+
+The 4 routines that almost all MPI program will have:
+
+~~~
+USE mpi_f08
+
+MPI_Init(ierror)
+    INTEGER, OPTIONAL, INTENT(OUT) :: ierror
+
+MPI_Comm_size(comm, size, ierror)
+    TYPE(MPI_Comm), INTENT(IN) :: comm
+    INTEGER, INTENT(OUT) :: size
+    INTEGER, OPTIONAL, INTENT(OUT) :: ierror
+
+MPI_Comm_rank(comm, rank, ierror)
+    TYPE(MPI_Comm), INTENT(IN) :: comm
+    INTEGER, INTENT(OUT) :: rank
+    INTEGER, OPTIONAL, INTENT(OUT) :: ierror
+
+MPI_Finalize(ierror)
+    INTEGER, OPTIONAL, INTENT(OUT) :: ierror
+~~~
+{: .language-fortran}
+
+
+The 2 routines for sending and receiving data
+
+~~~
+USE mpi_f08
+
+MPI_Send(buf, count, datatype, dest, tag, comm, ierror)
+    TYPE(*), DIMENSION(..), INTENT(IN) :: buf
+    INTEGER, INTENT(IN) :: count, dest, tag
+    TYPE(MPI_Datatype), INTENT(IN) :: datatype
+    TYPE(MPI_Comm), INTENT(IN) :: comm
+    INTEGER, OPTIONAL, INTENT(OUT) :: ierror
+
+MPI_Recv(buf, count, datatype, source, tag, comm, status, ierror)
+    TYPE(*), DIMENSION(..) :: buf
+    INTEGER, INTENT(IN) :: count, source, tag
+    TYPE(MPI_Datatype), INTENT(IN) :: datatype
+    TYPE(MPI_Comm), INTENT(IN) :: comm
+    TYPE(MPI_Status) :: status
+    INTEGER, OPTIONAL, INTENT(OUT) :: ierror
+~~~
+{: .language-fortran}
+
+And the two routines for Broadcasting and Reduce
+
+~~~
+USE mpi_f08
+
+MPI_Bcast(buffer, count, datatype, root, comm, ierror)
+    TYPE(*), DIMENSION(..) :: buffer
+    INTEGER, INTENT(IN) :: count, root
+    TYPE(MPI_Datatype), INTENT(IN) :: datatype
+    TYPE(MPI_Comm), INTENT(IN) :: comm
+    INTEGER, OPTIONAL, INTENT(OUT) :: ierror
+
+MPI_Reduce(sendbuf, recvbuf, count, datatype, op, root, comm, ierror)
+    TYPE(*), DIMENSION(..), INTENT(IN) :: sendbuf
+    TYPE(*), DIMENSION(..) :: recvbuf
+    INTEGER, INTENT(IN) :: count, root
+    TYPE(MPI_Datatype), INTENT(IN) :: datatype
+    TYPE(MPI_Op), INTENT(IN) :: op
+    TYPE(MPI_Comm), INTENT(IN) :: comm
+    INTEGER, OPTIONAL, INTENT(OUT) :: ierror
+~~~
+{: .language-fortran}
+
+With just 8 operations you can implement most algorithms you can think with MPI.
+The other 250+ routines are just convenient and more efficient ways of doing some operations.
+
+Starting a new code in MPI is not a light endeavor.
+However, most of the flagship codes in HPC uses MPI.
+MPI is the ultimate way of achieving large scale parallelism on the biggest supercomputers today.
 
 {% include links.md %}

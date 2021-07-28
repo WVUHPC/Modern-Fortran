@@ -1,7 +1,6 @@
 ---
 title: "Best Practices in Modern Fortran"
-start: 840
-teaching: 30
+teaching: 60
 exercises: 0
 questions:
 - "Key question (FIXME)"

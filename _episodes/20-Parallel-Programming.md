@@ -1,7 +1,7 @@
 ---
-title: "Parallel Computing"
+title: "Parallel Programming in Fortran"
 start: 840
-teaching: 30
+teaching: 60
 exercises: 0
 questions:
 - "Key question (FIXME)"

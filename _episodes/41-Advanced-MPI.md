@@ -1,5 +1,5 @@
 ---
-title: "Exercises"
+title: "Advanced Topics in MPI"
 teaching: 0
 exercises: 60
 questions:

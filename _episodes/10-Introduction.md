@@ -1,7 +1,7 @@
 ---
-title: "Introduction to Fortran and Basic Elements of the Language"
+title: "Introduction to Modern Fortran"
 start: 840
-teaching: 30
+teaching: 60
 exercises: 0
 questions:
 - "Key question (FIXME)"

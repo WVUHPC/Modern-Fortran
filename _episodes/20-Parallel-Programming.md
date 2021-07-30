@@ -11,7 +11,66 @@ keypoints:
 - "First key point. Brief Answer to questions. (FIXME)"
 ---
 
-# Parallel Computing in Fortran
+# Why Parallel Computing?
+
+Since the around the 90s Fortran designers understood that the era of programming for a single CPU will be abandoned very soon.
+At that time, vector machines exist but they were in use for very specialized calculations.
+It was around 2004 that the consumer market start moving out of having a single fast CPU with a single processing unit into a CPU with multiple processing units or cores.
+Many codes are intrinsically serial and adding more cores did not bring more performance out of those codes.
+The figure below shows how a serial code today runs 12 times slower that it could if the increase in performance could have continue as it were before 2004.
+That is the same as to say that the code today runs at a speed that could have been present 8 to 10 years ago with if the trend could have been sustained up to now.
+
+<div style="text-align:center">
+<p>
+<a href="../fig/perf_scaled_with_trend.png">
+   <img src="../fig/perf_scaled_with_trend.png" alt="Performance scaled" />
+</a>
+Evolution over several decades of the number of transistors in CPUs, Performance of Serial codes and number of cores
+<br>
+From <a href="https://liberty.princeton.edu/Projects/AutoPar/"> Princeton Liberty Research Group </a>
+</p>
+</div>
+
+The reason for this lack is not a failure in Moore's law when measured in the number of transistors on CPUs.
+
+<div style="text-align:center">
+<p>
+<a href="../fig/Transistor-Count-over-time.png">
+   <img src="../fig/Transistor-Count-over-time.png" alt="Transistor Count over time" />
+</a>
+A logarithmic graph showing the timeline of how transistor counts in mircochips are almost doubling every two years from 1970 to 2020; Moore's Law.
+<br>
+From <a href="https://ourworldindata.org/uploads/2020/11/Transistor-Count-over-time.png"> Our World in Data </a> Data compiled by Max Roser and Hannah Ritchie
+</p>
+</div>
+
+The fact is that instead of faster CPUs computers today have more cores on each CPU, machines on HPC cluster have 2 or more CPU sockets on a single mainboard and we have Accelerators, machines with massive amounts of simple cores that are able to perform certain calculations more efficiently than contemporary CPU.
+
+<div style="text-align:center">
+<p>
+<a href="../fig/48-years-processor-trend.png">
+   <img src="../fig/48-years-processor-trend.png" alt="Transistor Count over time" />
+</a>
+Evolution of CPUs in terms of number of transistors, power consumption and number of cores.
+<br>
+From <a href="https://github.com/karlrupp/microprocessor-trend-data"> Karl Rupp Github repo</a> Original data up to the year 2010 collected and plotted by M. Horowitz, F. Labonte, O. Shacham, K. Olukotun, L. Hammond, and C. Batten" at 1970,6e-3 tc ls 1 font ",8"
+New plot and data collected for 2010-2019 by K. Rupp
+</p>
+</div>
+
+It should be clear that computers today are not getting faster and faster over the years as it was the case during the 80s and 90s.
+Computers today are just getting marginally faster if you look at one individual core, but today we have more cores on a machine and basically every computer, tablet and phone around us is multiprocessor.
+
+## Parallel Programming in Fortran
+
+If computers are multiprocessor how that affects programming?
+It could be desirable that parallelism could be something that a computer deals automatically.
+The reality is that today, writing parallel code or converting serial code, ie codes that are supposed to run on a single core is not a trivial task.
+
+Back in the mid 90s Fortran designers
+
+
+
 
 OpenMP and OpenACC are directive-based standards for parallel programming. In the case of OpenMP the original intention was to provide efficient threaded parallelism on shared memory computers. For OpenACC the objective is to use a similar idea but for external accelerators such as GPUs.
 

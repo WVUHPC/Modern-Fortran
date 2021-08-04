@@ -56,9 +56,148 @@ Some of those sites teach Fortran 90, some teach and show examples in FORTRAN 77
 There are a few sites and books that present Fortran 2003 and 2008 but still with code style from older ways.
 Along this lectures we will present how Fortran codes are developed today, we try to use as many Fortran 2003/2008 features as possible, examples use modern style, we completely ignore features that have become obsolete, discouraged and deprecated.
 
-## Elements of the Language
+## Compiling Fortran code
+
+Before we explore the syntax and structure of the Fortran Programming language we will fist learn how to compile any of the examples that will be presented form now on.
 
 A code written in Fortran is a text file.
+A program language has a strict a syntax for which the text file needs to follow so the compiler can produce an executable binary.
+
+As an example we will use a relative small code.
+This code implements a si
+mple algorithm that computes pi.
+We will use an integral formula for pi:
+
+<img src="https://latex.codecogs.com/svg.image?\int&space;\frac{1}{1&space;&plus;&space;x^2}&space;dx&space;=&space;\tan^{-1}(x)&space;&plus;&space;\mathrm{constant}&space;" title="\int \frac{1}{1 + x^2} dx = \tan^{-1}(x) + \mathrm{constant} " />
+
+<img src="https://latex.codecogs.com/svg.image?\tan(\pi/4)&space;=&space;1&space;\rightarrow&space;\tan^{-1}(1)&space;=&space;\pi/4&space;&space;" title="\tan(\pi/4) = 1 \rightarrow \tan^{-1}(1) = \pi/4 " />
+
+<div style="text-align:center">
+<p>
+<a href="../fig/pi.svg">
+   <img src="../fig/pi.svg" alt="Performance scaled" />
+</a>
+Integral used to converge pi
+</p>
+</div>
+
+
+The integral will be computed by diving the range into N pieces and computing the rectangles associated to each of them.
+Assuming a uniform partition in the domain, the quadrature can be computed as:
+
+<img src="https://latex.codecogs.com/svg.image?\int_{a}^{b}&space;f(x)\,&space;dx&space;\approx&space;\frac{1}{N}&space;\sum_{k=1}^{N}&space;f(x_{k})&space;&space;" title="\int_{a}^{b} f(x)\, dx \approx \frac{1}{N} \sum_{k=1}^{N} f(x_{k}) " />
+
+where
+
+<img src="https://latex.codecogs.com/svg.image?\inline&space;x_k&space;" title="\inline x_k " />
+
+is some point in the interval of the rectangle.
+In the implementation below we are using the middle point.
+
+The source code is the file (``example_00.f90``)
+
+~~~
+program converge_pi
+
+   use iso_fortran_env
+
+   implicit none
+
+   integer, parameter :: knd = max(selected_real_kind(15), selected_real_kind(33))
+   integer, parameter :: n = huge(1)/1000
+   real(kind=knd), parameter :: pi_ref = 3.1415926535897932384626433832795028841971_knd
+
+   integer :: i
+   real(kind=knd) :: pi = 0.0, t
+
+   print *, 'KIND      : ', knd
+   print *, 'PRECISION : ', precision(pi)
+   print *, 'RANGE     : ', range(pi)
+
+   do i = 0, n - 1
+      t = real(i + 0.5, kind=knd)/n
+      pi = pi + 4.0*(1.0/(1.0 + t*t))
+   end do
+
+   print *, ""
+   print *, "Number of terms in the series : ", n
+   print *, "Computed value : ", pi/n
+   print *, "Reference vaue : ", pi_ref
+   print *, "ABS difference with reference : ", abs(pi_ref - pi/n)
+
+end program converge_pi
+~~~
+{: .language-fortran}
+
+We will compile this code using 3 different compilers, GCC 11.1,
+
+Load the following modules to access all those 3 compilers
+
+~~~
+$> module load lang/gcc/11.1.0 lang/nvidia/nvhpc compiler/2021.2.0
+~~~
+{: .language-bash}
+
+Loading these modules we will get access to ``gfortran``, ``ifort`` and ``nvfortran``, the names of the Fortran compilers from GNU, Intel and NVIDIA respectively.
+
+The code above can be compiled with each compiler executing:
+
+~~~
+$> gfortran example_00.f90
+~~~
+{: .language-bash}
+
+~~~
+$> ifort example_00.f90
+~~~
+{: .language-bash}
+
+~~~
+$> nvfortran example_00.f90
+~~~
+{: .language-bash}
+
+When compiling the code with any of these compilers a binary file will be created.
+The name of the file is by default ``a.out``.
+This is convenient name for quick tests like the examples.
+
+To run the resulting binary, type the name of the binary with a ``./``.
+Otherwise, the shell will try to search for a command in the ``$PATH`` resulting on an error.
+
+~~~
+$> ./a.out
+~~~
+{: .language-bash}
+
+You can also compile declaring the name of the final executable, for example using gfortran:
+
+~~~
+$> gfortran example_00.f90 -o pi
+~~~
+{: .language-bash}
+
+The name of the executable will be ``pi`` and can run.
+
+~~~
+$> ./pi
+~~~
+{: .language-bash}
+
+~~~
+KIND      :           16
+PRECISION :           33
+RANGE     :         4931
+
+Number of terms in the series :      2147483
+Computed value :    3.14159265358981130850975669310991368      
+Reference vaue :    3.14159265358979323846264338327950280      
+ABS difference with reference :    1.80700471133098304108856024329067224E-0014
+~~~
+{: .output}
+
+
+## Elements of the Language
+
 Fortran uses the 26 characters of the English alphabet plus the digits plus a set of characters such as parenthesis, comma, colon, and a few others.
 This restriction contrast to languages such as Julia that allow basically any UTF-8 string to be a valid variable name (including smile face, greek letters and Chinese ideograms).
 In Fortran syntax lowercase letters are equivalent to uppercase, except when they are part of a character string.
@@ -151,7 +290,7 @@ Multiple elements of the same type can be arranged in what is called an **array*
 #### integer
 
 On a computer using 32 bits for repreenting integers, the range of values is:
-  ![\Large -2^{n-1} \cdots 2^{n-1} -1](https://latex.codecogs.com/svg.latex?\Large&space;-2^{n-1} \cdots 2^{n-1} -1)
+![\Large -2^{n-1} \cdots 2^{n-1} -1](https://latex.codecogs.com/svg.latex?\Large&space;-2^{n-1} \cdots 2^{n-1} -1)
 
 As those ranges varied between machines and compilers it is better to ask for a kind that is able to support the values that we declare.
 In the example below to store numbers up to six digits:

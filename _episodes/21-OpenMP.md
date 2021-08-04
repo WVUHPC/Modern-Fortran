@@ -12,7 +12,12 @@ keypoints:
 
 ## OpenMP
 
-The first specs for OpenMP are from 1997. Today most modern compilers support OpenMP 3.0 from 2008 and the 3 compilers that we will be using (GNU, Intel and NVIDIA) support most of the OpenMP 4.0 or OpenMP 4.5
+OpenMP is a directive based approach for parallelization.
+OpenMP offers a set of pragmas, ie comments that can be added to the source code to guide the compiler on how it should parallelize certain regions.
+OpenMP also provides an API, routines and variables that can be accessed inside the sources and manipulate even further the paralelization.
+
+The first specs for OpenMP date back from 1997.
+Today most modern Fortran compilers support OpenMP 3.0 and the 3 compilers that we will be using (GNU, Intel and NVIDIA) support most of the OpenMP 4.0 or OpenMP 4.5.
 
 OpenMP was created for parallelizing code for shared memory machines. Shared memory machines are those with multiple cores where the cores are able to see, ie address the entire memory of the machine.
 

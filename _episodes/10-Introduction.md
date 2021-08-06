@@ -569,6 +569,404 @@ a(1,1) a(2,1) a(3,1) a(1,2) a(2,2) a(3,2) a(1,3) a(2,3) a(3,3)
 When we discuss loops on arrays the internal faster loop must run over the internal most contiguous index.
 This is the complete opposite from the way a language like C represent multidimensional arrays.
 
+Sections of arrays can be referenced using the colom notation ``a(i:j)``, where elements in indices ``i`` up to ``j`` are returned. Array **sections**
+cannot be sectioned again.
+
+### Constructors
+
+Array constants can be defined in two notations.
+
+~~~
+a = (/ 1, 2, 3, 4, 5, 6, 7, 8 /) ! Old Notation
+b = [ 2, 4, 6, 8, 10, 12, 14, 16 ]   ! Fortran 2003 notation
+~~~
+
+There are constructors for constant arrays using implicit loops.
+The arrays
+
+~~~
+a = (/ (i, i=1, 8) /)
+b = [ (i, i=2, 16, 2) ]
+~~~
+{: .language-fortran}
+
+### Allocatables
+
+One of the big innovations of Fortran 90 was the inclusion of **Dynamic memory allocation** via the attribute ``allocatable`` for arrays.
+Before memory allocation, programmers create arrays of predefined size, sometimes overestimating the size of the array or demanding recompilation each to adjust the size of arrays to different problems.
+
+An allocatable array is defined like this:
+
+~~~
+real, dimension(:, :), allocatable :: a
+~~~
+{: .language-fortran}
+
+When the variable is first created it is in **unallocated** state.
+Allocation and deallocation is done with the ``allocate`` and ``deallocate``
+
+~~~
+allocate(a(n,-m:m))
+...
+deallocate(a)
+~~~
+{: .language-fortran}
+
+## Strings of characters
+
+
+There is a special way of declaring strings of characters.
+
+~~~
+character(len=34) :: name
+~~~
+{: .language-fortran}
+
+Despite of being formally different from an array of characters many of the notation for addressing elements and extracting portions of arrays hold for strings
+
+## Pointers
+
+A variable that refers to other variable is called a **pointer**.
+Pointers are powerful means of declaring operations that apply to different elements using a notation that uses those pointers to as the name says, point to a different variable each time.
+
+Declaration is as follows:
+
+~~~
+integer, pointer :: pn
+real, pointer    :: px
+real, pointer, dimension(:,:) :: pa
+~~~
+{: .language-fortran}
+
+What happens behind curtains is that each of those variables use a portion of memory to contain a **descriptor**, that holds not only the memory location, but also the type, and in the case of arrays, bounds and strides.
+
+When a pointer is created, it is by default **undefined**, i.e there is no way to know if they point something.
+A pointer can be nullified with:
+
+~~~
+real, pointer    :: px => null()
+~~~
+{: .language-fortran}
+
+This is the recommended way of creating pointers as the state can be determined.
+During the code, the code can point to other variables and can be null again with:
+
+~~~
+nullify(pa, px)
+~~~
+{: .language-fortran}
+
+
+## Expressions and Statements
+
+Variables and constants interact with each other via operators.
+For example when you write:
+
+~~~
+c = b + 5
+~~~
+{: .language-fortran}
+
+You are using the **dyadic** operator plus (``+``) and use the variable ``b`` and constant ``5``.
+The result of that operation is **assigned** ie stored in the memory associated to ``c``.
+
+Most operators are dyadic but there are also **monadic** operators such as minus (``-``) when used isolated.
+
+Expressions without parentheses are evaluated successively from left to right for operators of equal precedence, except for exponent ``**`` that is operated first.
+For example
+
+~~~
+f = a/b/c/d
+~~~
+{: .language-fortran}
+
+Is actually computed as ``a/b`` then the result divided by ``c`` and finally the result divided by ``d``. At the end of calculation, the final value is assigned to ``f``
+
+This operation can be actually be computed as
+
+~~~
+f = a/(b*c*d)
+~~~
+{: .language-fortran}
+
+As compilers could identify that divisions are more computationally expensive than multiplications and prefer a single division.
+
+For exponents the evaluation is right to left, for example ``a**b**c`` is evaluated as ``a**(b**c)``
+
+Division between integers return integer, the value truncated, not rounded example:
+
+~~~
+12/3  is 4
+14/3  is 4
+~~~
+{: .language-fortran}
+
+When numbers of different type operate the return is for the stronger type and the weakest type is promoted before operation.
+
+Numerical variables can be promoted to different type using functions
+
+| Type    | Convertion Fuction       |
+|---------|--------------------------|
+| integer | int(expr, kind(variable))|
+| real    | real(expr, kind(variable)) |
+| complex | compl(expr, kind(variable)) |
+
+You can use the same function to change inside the same type but different kind.
+
+Operators that return boolean
+
+| Operator | Description           |
+|----------|-----------------------|
+| <        | Less than             |
+| >        | Greater than          |
+| <=       | Less than or equal    |
+| >=       | Greater than or equal |
+| ==       | equal                 |
+| /=       | not equal             |
+
+Booleans themselves receive operators:
+
+| Operator | Description           |
+|----------|-----------------------|
+| .not.    | logical negation      |
+| .and.    | logical intersection  |
+| .or.     | logical union         |
+| -eqv.    | logical equivalent    |
+| .neqv.   | logical non-euivalent |
+
+## Array Expressions
+
+Operations over arrays are greatly simplified by using the concept of **conformable** arrays.
+Two arrays are conformable if the have the same **shape*, ie, the same dimension, and the same number of elements on each dimension.
+The actual indices can differ.
+Scalars are conformable to any array and the value will operate one-to-one over each element of the array.
+
+Consider an array:
+
+~~~
+real, dimension(30,10) :: a, b
+real, dimension(10) :: v
+~~~
+{: .language-fortran}
+
+The following operations are valid
+
+~~~
+a/b      ! Array with shape [30,10] with entries a(i,j)/b(i,j)
+b+3.14   ! Array with shape [30,10] with values b(i)+3.14
+v + b(11:20, 10) | Array with shape [10]
+a == b   ! Boolean comparison, .true. if all individual comparisons are true
+~~~
+{: .language-fortran}
+
+
+## Control Constructs
+
+Programs with just a linear sequence of statements cannot produce the right flow of instructions needed even by a simple algorithm.
+Control constructs are build with **blocks**, some keyword at the very beginning and a final **end ...** at the end.
+Control constructs can be nested and a outer block cannot **end** before all nested blocks are also ended.
+
+There are two major sets of controls.
+Those that diverge the execution based on an expression being true or false.
+These kind of controls are called **conditionals**.
+The typical conditional in Fortran is the ``if _expression_ else _statements_ end if``
+
+There are also controls that repeat the contents of a block a certain number of times or until a condition is reached.
+Those are called **loops**.
+The usual loop in Fortran is the ``do  statements end do``
+
+### Conditional ``if``
+
+The conditional ``if`` is used when the execution can go to at most one case.
+It could do nothing or having more test conditions, but only one block will be executed. Conditional as any block can be named:
+
+The following example is good fore reference:
+
+~~~
+posneg: if (x > 0) then
+  print *, 'Positive number'
+else if (x < 0 ) then
+  print *, 'Negative number'
+else
+  print *, 'Value is zero'
+end if posneg
+~~~
+{: .language-fortran}
+
+The conditional has a name (``posneg``) and this is optional.
+The ``else if`` and ``else`` are optional too.
+The else clause in case it exists, must be the final clause.
+
+For very quick conditional there is one line form that is useful
+
+~~~
+if (x /= 0) print *, 'Non zero value'
+~~~
+{: .language-fortran}
+
+### Conditional ``case``
+
+The second conditional in fortran is ``case``.
+In this case there is only one evaluation but multitple blocks can be executed based on a selector and selector.
+There is also an option for a default value that is executed if any of the other cases were.
+
+Example:
+
+~~~
+select case
+   case (:-1)
+      x = -1.0
+case (0)
+      x = -1E-8
+case (3:)
+      x = 3.14
+default
+      x = 0.0
+end select
+~~~
+{: .language-fortran}
+
+### Loop ``do``
+
+The ``do`` loop has a rich construct that is able to not doing anything to run an infinite loop. ``do`` loops is one of the oldest constructs in fortran and have received a lot of variations over different Fortran versions.
+
+For this introductory lesson a simple form is shown.
+As example consider a simple but not particularly efficient way of computing a matrix multiplication:
+
+~~~
+do i = 1, n
+   do j = 1, m
+      a(i,j) = 0.0
+      do l = 1, k
+         a(i,j) = a(i,j) + b(i,l)*c(l,j)
+      end do
+   end do
+end do
+~~~
+{: .language-fortran}
+
+There are two special statements that alter the repetition in ``do`` loops.
+``exit`` skips entirely the loop and set the program to continue on the first line after ``end do``.
+With nested cycles it is possible to abandon an outer loop from an inner loop and we will see this on the advanced hour.
+
+``cycle`` will skip one run and set the execution just before ``end do``, meaning that the next iteration will take place but all the code after the ``cycle`` will be skipped.
+Consider this simple example:
+
+~~~
+do c = 1, 100
+  dis = b**2 - 4*a*c
+  if dis < 0 exit
+end do
+~~~
+{: .language-fortran}
+
+## Programs, Procedures and Modules
+
+A program is composed of a set of variable definition, assigments, statements, control blocks such as loops and conditionals conditionals.
+All those pieces of code are organized in programs, procedures and modules.
+
+This is a brief review of each of them and will provide the bare minimum to start writing simple programs on your own.
+
+Any program has at least one main program. We have already used one for our first example. The basic structure of a main program is
+
+~~~
+program name
+
+! variable definitions
+...
+
+! statements
+...
+
+end program
+~~~
+{: .language-fortran}
+
+Writing an entire code in a single program is possible but will produce a code with a lot of redundancy and very hard of maintain.
+The next level of complexity is to take pieces of code and convert them in procedures.
+There are two kinds of procedures: A **function** and a **subroutine**
+The difference is that functions return a single value and usually does not alter the input (at least to be aligned to the concept of mathematical function).
+A subroutine does not return anything so it cannot be included as part of an expression, but it can change the arguments, effectively giving a mechanism to alter the state of the variables and the calling program.
+A subroutine is called using the clause ``call``
+
+The next level is to group procedures, functions and types into a coherent structure called **modules**.
+Modules are powerful way of structuring large codes.
+Even small codes benefit from modules as they offer type checking that internal procedures will not offer.
+
+Some examples will clarify these concepts needed for the exercises proposed later on.
+
+A very minimal program will be something like:
+
+~~~
+program test
+   print *, ’Hello world!’
+end program test
+~~~
+{: .language-fortran}
+
+This program has just one statement, no variables, not calls to subroutines or functions. This program itself written in a file can be compiled and the code executed.
+See the first section of this lesson where we show how to compile a code like this.
+
+Apart from the program there are **subprograms**, their structure is very similar to the main program but the resulting code can only be called from other program or subprogram.
+
+A subroutine is defined as
+
+~~~
+subroutine sub(a, x, y)
+   real, intent(in) :: a
+   real, intent(in), dimension(:) :: x
+   real, intent(out), dimension(:) :: y
+
+   y = a*x
+
+end subroutine
+~~~
+{: .language-fortran}
+
+
+The subprogram **function** is similar to subroutines but they can be called on expressions and typically will not change the arguments.
+
+One example:
+
+~~~
+function distance3D(p1, p2)
+
+  real :: distance = 0.0
+  real, intent(in), dimension(3) :: p1, p2
+  integer :: i
+
+  do i=1, 3
+    distance = distance + (p1(i)-p2(i))**2
+  end do
+
+  distance = sqrt(distance)
+
+end function distance3D
+~~~
+{: .language-fortran}
+
+## Input and Output
+
+Such short introduction to the language will inevitably leave several topics completely uncovered.
+Input/Output is a quite complex topic for such short lecture.  
+
+What follows is just the bare minimum for producing rudimentary but effective output on the screen and receiving input from the keyboard or command line.
+
+We have use the ``print`` clause, it is quite simple to use like this:
+
+~~~
+print *, 'VAR 1: ', var1, 'VAR2: ', var2
+~~~
+{: .language-fortran}
+
+This clause will print on the standard output, which by default the shell associate to the terminal.
+
+
+### Command Line Arguments
+
+One of the novelties of 2003 is to allow Fortran programs to read from the command line.
+Consider this example:
+
 
 
 

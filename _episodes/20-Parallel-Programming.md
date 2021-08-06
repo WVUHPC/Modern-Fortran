@@ -268,35 +268,67 @@ The figure below show an schematic of one multicore machine with 3 GPUs attached
 </a>
 
 As we did for OpenMP, the same code can be made parallel adding a few directives.
+(``example_03.f90``)
 
 ~~~
-...
-!$ACC KERNELS
-do i=0, n-1
-  t = (real(i)+0.05)/n
-  pi = pi + 4.0/(1.0+t*t)
-end do
-!$ACC END KERNELS
-...
+program converge_pi
+
+   use iso_fortran_env
+
+   implicit none
+
+   integer, parameter :: knd = max(selected_real_kind(15), selected_real_kind(33))
+   integer, parameter :: n = huge(1)/1000
+   real(kind=knd), parameter :: pi_ref = 3.1415926535897932384626433832795028841971_knd
+
+   integer :: i
+   real(kind=knd) :: pi = 0.0, t
+
+   print *, 'KIND      : ', knd
+   print *, 'PRECISION : ', precision(pi)
+   print *, 'RANGE     : ', range(pi)
+
+   !$ACC PARALLEL LOOP PRIVATE(t) REDUCTION(+:pi)
+   do i = 0, n - 1
+      t = real(i + 0.5, kind=knd)/n
+      pi = pi + 4.0*(1.0/(1.0 + t*t))
+   end do
+   !$ACC END PARALLEL LOOP
+
+   print *, ""
+   print *, "Number of terms in the series : ", n
+   print *, "Computed value : ", pi/n
+   print *, "Reference vaue : ", pi_ref
+   print *, "ABS difference with reference : ", abs(pi_ref - pi/n)
+
+end program converge_pi
 ~~~
 {: .language-fortran}
 
-Both OpenMP and OpenACC operate by adding special directives to the original sources. I want to stress the similarities before we analyze the differences.
+The loop is once more surrounded by directives that for this particular case looks very similar to the OpenMP directives presented before.
 
-Edit the original file ``pi.f90`` to create a new file ``pi_omp.f90`` with the change above for OpenMP. Do the same to create the file ``pi_acc.f90`` for the file using OpenACC.
-
+~~~
+!$ACC PARALLEL LOOP PRIVATE(t) REDUCTION(+:pi)
+do i = 0, n - 1
+   t = real(i + 0.5, kind=knd)/n
+   pi = pi + 4.0*(1.0/(1.0 + t*t))
+end do
+!$ACC END PARALLEL LOOP
+~~~
+{: .language-fortran}
 
 For the OpenACC version of the code the compilation line is:
 
 ~~~
-$> gfortran -fopenacc pi_acc.f90 -o pi_acc
+$> gfortran -fopenacc example_03.f90
 ~~~
 {: .language-bash}
 
 Intel compilers do not support OpenACC
+The best support comes from NVIDIA compilers
 
 ~~~
-$> nvfortran -acc -Minfo=all pi_acc.f90 -o pi_acc
+$> nvfortran -acc -Minfo=all example_03.f90
 ~~~
 {: .language-bash}
 
@@ -311,6 +343,8 @@ Using directives instead of extending the language offers several advantages:
 An alternative to OpenMP could be pthreads, and alternative to OpenACC could be CUDA. Both alternatives suffer from the items mentioned above.
 
 Despite of the similarities at this point, OpenMP and OpenACC were created targeting very different architectures. The idea being that eventually both will converge into a more general solution. We will now discuss each approach separately, at the end of this discussion we will talk about the efforts to converge both approaches.
+
+## MPI
 
 
 {% include links.md %}

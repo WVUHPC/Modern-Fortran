@@ -965,8 +965,68 @@ This clause will print on the standard output, which by default the shell associ
 ### Command Line Arguments
 
 One of the novelties of 2003 is to allow Fortran programs to read from the command line.
-Consider this example:
+Consider this example (``example_10.f90``)
 
+~~~
+program main
+
+   implicit none
+
+   integer :: i
+   character(len=1024) :: arg
+   integer :: length, istatus
+
+   print *, 'Number of arguments', command_argument_count()
+
+   do i = 1, command_argument_count()
+
+      call get_command_argument(i, arg, length, istatus)
+
+      print *, trim(arg)
+
+   end do
+
+end program
+~~~
+{: .language-fortran}
+
+The arguments are strings but can be converted using the read function.
+Example  (``example_11.f90``):
+
+~~~
+program main
+
+   implicit none
+
+   integer :: i
+   character(len=1024) :: arg
+   integer :: length, istatus
+   real :: a(3)
+
+   print *, 'Number of arguments', command_argument_count()
+
+   do i = 1, command_argument_count()
+
+      call get_command_argument(i, arg, length, istatus)
+
+      print *, trim(arg)
+
+   end do
+
+   if (command_argument_count() == 3) then
+
+      do i = 1, 3
+         call get_command_argument(i, arg, length, istatus)
+         read (arg, *) a(i)
+      end do
+
+   end if
+
+   print '(3(e12.3))', a(:)
+
+end program
+~~~
+{: .language-fortran}
 
 
 

@@ -731,7 +731,7 @@ Booleans themselves receive operators:
 | .not.    | logical negation      |
 | .and.    | logical intersection  |
 | .or.     | logical union         |
-| -eqv.    | logical equivalent    |
+| .eqv.    | logical equivalent    |
 | .neqv.   | logical non-euivalent |
 
 ## Array Expressions
@@ -753,7 +753,7 @@ The following operations are valid
 
 ~~~
 a/b      ! Array with shape [30,10] with entries a(i,j)/b(i,j)
-b+3.14   ! Array with shape [30,10] with values b(i)+3.14
+b+3.14   ! Array with shape [30,10] with values b(i,j)+3.14
 v + b(11:20, 10) | Array with shape [10]
 a == b   ! Boolean comparison, .true. if all individual comparisons are true
 ~~~

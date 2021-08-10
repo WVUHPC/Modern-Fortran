@@ -502,5 +502,271 @@ So far we have been using ``!$OMP PARALLEL DO``.
 This is a convenient construct for parallelizing ``DO`` loops in fortran.
 OpenMP offers a more general construct ``!$OMP PARALLEL`` that ask the system to span a number of threads and leave how those therads are used to other constructs that can use those threads.
 
+## Barrier and Critical directives
+
+OpenMP has a variety of tools for managing processes. One of the more prominent forms of control comes with the barrier:
+
+~~~
+!$OMP BARRIER
+~~~
+{: .language-fortran}
+
+
+…and the critical directives:
+
+~~~
+!$OMP CRITICAL
+...
+!$OMP END CRITICAL
+~~~
+{: .language-fortran}
+
+
+The barrier directive stops all processes for proceeding to the next line of code until all processes have reached the barrier. This allows a programmer to synchronize processes in the parallel program.
+
+A critical directive ensures that a line of code is only run by one process at a time, ensuring thread safety in the body of code.
+
+One simple example consist on ensuring that the messages from different threads print in qorder
+
+~~~
+program main
+
+use omp_lib
+
+implicit none
+
+integer :: i, thread_id
+
+!$OMP PARALLEL PRIVATE(thread_id)
+    thread_id = OMP_GET_THREAD_NUM()
+
+    do i=0, OMP_GET_MAX_THREADS()
+        if (i == thread_id) then
+            print *, "Hello OpenMP from thread: ", thread_id
+        end if
+        !$OMP BARRIER
+    end do
+!$OMP END PARALLEL
+
+stop
+
+end program
+~~~
+{: .language-fortran}
+
+A thread-safe section of the code can be done by declaring the block CRITICAL.
+In this case we are computing function sinc(pi*z) where we set z=1/4
+
+~~~
+program main
+
+   use omp_lib
+
+   implicit none
+
+   integer, parameter :: k15 = selected_real_kind(15)
+   real(kind=k15) :: partial_prod, total_prod
+   integer :: i
+   real(kind=k15)    :: z=0.25
+
+!$OMP PARALLEL PRIVATE(partial_prod) SHARED(total_prod)
+   partial_prod = 1;
+   total_prod = 1;
+   !$OMP DO
+   do i = 1, huge(i)
+      partial_prod = partial_prod * (1.0 - z**2 / real(i)**2)
+   end do
+   !$OMP END DO
+
+   !$OMP CRITICAL
+   total_prod = total_prod * partial_prod
+   !$OMP END CRITICAL
+
+!$OMP END PARALLEL
+   print *, "Total Prod: ", total_prod
+
+end program
+~~~
+{: .language-fortran}
+
+## Multitasks
+
+~~~
+module thetables
+
+   integer, parameter :: i6 = selected_int_kind(6)
+   integer, parameter :: r9 = selected_real_kind(9)
+
+contains
+
+   subroutine prime_table(prime_num, primes)
+
+      implicit none
+
+      integer(kind=i6) prime_num
+
+      integer(kind=i6) i
+      integer(kind=i6) j
+      integer(kind=i6) p
+      logical prime
+      integer(kind=i6) primes(prime_num)
+
+      i = 2
+      p = 0
+
+      do while (p < prime_num)
+
+         prime = .true.
+
+         do j = 2, i - 1
+            if (mod(i, j) == 0) then
+               prime = .false.
+               exit
+            end if
+         end do
+
+         if (prime) then
+            p = p + 1
+            primes(p) = i
+         end if
+
+         i = i + 1
+
+      end do
+
+      return
+   end
+
+   subroutine sine_table(sine_num, sines)
+
+      implicit none
+
+      integer(kind=i6) sine_num
+
+      real(kind=r9) a
+      integer(kind=i6) i
+      integer(kind=i6) j
+      real(kind=r9), parameter :: r8_pi = 3.141592653589793D+00
+      real(kind=r9) sines(sine_num)
+
+      do i = 1, sine_num
+         sines(i) = 0.0D+00
+         do j = 1, i
+            a = real(j - 1, kind=r9)*r8_pi/real(sine_num - 1, kind=r9)
+            sines(i) = sines(i) + sin(a)
+         end do
+      end do
+
+      return
+   end
+
+   subroutine cosine_table(cosine_num, cosines)
+
+      implicit none
+
+      integer(kind=i6) cosine_num
+
+      real(kind=r9) a
+      integer(kind=i6) i
+      integer(kind=i6) j
+      real(kind=r9), parameter :: r8_pi = 3.141592653589793D+00
+      real(kind=r9) cosines(cosine_num)
+
+      do i = 1, cosine_num
+         cosines(i) = 0.0D+00
+         do j = 1, i
+            a = real(j - 1, kind=r9)*r8_pi/real(cosine_num - 1, kind=r9)
+            cosines(i) = cosines(i) + sin(a)
+         end do
+      end do
+
+      return
+   end
+
+end module thetables
+
+program main
+
+   use omp_lib
+   use thetables
+
+   implicit none
+
+   integer(kind=i6) prime_num
+   integer(kind=i6), allocatable :: primes(:)
+   integer(kind=i6) sine_num, cosine_num
+   real(kind=r9), allocatable :: sines(:), cosines(:)
+   real(kind=r9) wtime
+   real(kind=r9) wtime1, wtime2, wtime3
+
+
+   write (*, '(a)') ' '
+   write (*, '(a)') 'MULTITASK_OPENMP:'
+   write (*, '(a)') '  FORTRAN90/OpenMP version'
+   write (*, '(a)') '  Demonstrate how OpenMP can "multitask" by using the'
+   write (*, '(a)') &
+      '  SECTIONS directive to carry out several tasks in parallel.'
+
+   prime_num = 20000
+   allocate (primes(1:prime_num))
+   sine_num = 20000
+   cosine_num = 40000
+   allocate (sines(1:sine_num))
+   allocate (cosines(1:cosine_num))
+
+   wtime = omp_get_wtime()
+
+!$omp parallel shared ( prime_num, primes, sine_num, sines )
+
+   !$omp sections
+
+   !$omp section
+   wtime1 = omp_get_wtime()
+   call prime_table(prime_num, primes)
+   wtime1 = omp_get_wtime() - wtime1
+   !$omp section
+   wtime2 = omp_get_wtime()
+   call sine_table(sine_num, sines)
+   wtime2 = omp_get_wtime() - wtime2
+   !$omp section
+   wtime3 = omp_get_wtime()
+   call cosine_table(cosine_num, cosines)
+   wtime3 = omp_get_wtime() - wtime3
+   !$omp end sections
+
+!$omp end parallel
+
+   wtime = omp_get_wtime() - wtime
+
+   write (*, '(a)') ' '
+   write (*, '(a,i6)') '  Number of primes computed was ', prime_num
+   write (*, '(a,i12)') '  Last prime was ', primes(prime_num)
+   write (*, '(a,i6)') '  Number of sines computed was ', sine_num
+   write (*, '(a,g14.6)') '  Last sine computed was ', sines(sine_num)
+   write (*, '(a,i6)') '  Number of cosines computed was ', cosine_num
+   write (*, '(a,g14.6)') '  Last cosine computed was ', cosines(cosine_num)
+   write (*, '(a)') ' '
+   write (*, '(a,g14.6)') '  Elapsed time = ', wtime
+   write (*, '(a,g14.6)') '  Task 1 time = ', wtime1
+   write (*, '(a,g14.6)') '  Task 2 time = ', wtime2
+   write (*, '(a,g14.6)') '  Task 3 time = ', wtime3
+!
+!  Free memory.
+!
+   deallocate (primes)
+   deallocate (sines)
+   deallocate (cosines)
+!
+!  Terminate.
+!
+   write (*, '(a)') ' '
+   write (*, '(a)') 'MULTITASK_OPENMP:'
+   write (*, '(a)') '  Normal end of execution.'
+   write (*, '(a)') ' '
+
+   stop
+end
+~~~
+{: .language-fortran}
 
 {% include links.md %}

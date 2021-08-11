@@ -60,7 +60,7 @@ use openacc
 
 ## First steps with OpenACC
 
-Consider this small code (``example_1_acc.f90``):
+Consider this small code (``example_01.f90``):
 
 ~~~
 module process_mod
@@ -110,7 +110,7 @@ As we will execute the code on a GPU the first step is to request an interactive
 Execute this command to request 1 node, 8 cores and 1 GPU for 4 hours
 
 ~~~
-$> qsub -X -I -q comm_gpu_inter -l nodes=1:ppn=8:gpus=1
+$> qsub -I -q comm_gpu_inter -l nodes=1:ppn=8:gpus=1
 ~~~
 {: .language-bash}
 
@@ -118,13 +118,40 @@ The command above request 1 GPU card, 8 CPU cores on 1 node.
 The default walltime for ``comm_gpu_inter`` queue is 4 hours, so that is the amount of time that is given when the job start running.
 The reason for selecting 8 hours is that most GPU compute nodes offer 3 GPU cards and those machines have 24 cores, the ratio then is 8 CPU cores for each GPU card.
 There are ways of using more than one GPU card but 1 GPU is enough during these examples and exercises.
-The extra argument ``-X`` will be necessary if you want to use the NVIDIA Profiler which is a GUI application. In that case you need to log into the cluster with X11 Forwarding using the argument ``-X`` on each ssh connection.
+
+The job will run on a GPU node.
+You can check the presence of the GPU by running the command ``nvidia-smi``.
+The output is shown below:
+
+~~~
+Wed Aug 03 12:37:57 2021       
++-----------------------------------------------------------------------------+
+| NVIDIA-SMI 465.19.01    Driver Version: 465.19.01    CUDA Version: 11.3     |
+|-------------------------------+----------------------+----------------------+
+| GPU  Name        Persistence-M| Bus-Id        Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp  Perf  Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |
+|                               |                      |               MIG M. |
+|===============================+======================+======================|
+|   0  NVIDIA Quadro P...  Off  | 00000000:AF:00.0 Off |                  Off |
+| 26%   19C    P8     8W / 250W |      0MiB / 24449MiB |      0%   E. Process |
+|                               |                      |                  N/A |
++-------------------------------+----------------------+----------------------+
+
++-----------------------------------------------------------------------------+
+| Processes:                                                                  |
+|  GPU   GI   CI        PID   Type   Process name                  GPU Memory |
+|        ID   ID                                                   Usage      |
+|=============================================================================|
+|  No running processes found                                                 |
++-----------------------------------------------------------------------------+
+~~~
+{: .output}
 
 Once you get assigned one of the GPU compute nodes. You need to load the module for the NVIDIA HPC SDK and change to the folder with the code examples:
 
 ~~~
 $> module load lang/nvidia/nvhpc
-$> cd Modern_Fortran_Data/OpenACC
+$> cd Modern-Fortran/files/openacc
 ~~~
 {: .language-bash}
 
@@ -140,7 +167,7 @@ For our first compilation we will compile without any special argument for the c
 By default the compiler will ignore entirely any OpenACC directive and compile a pure Fortran code.
 
 ~~~
-$> nvfortran example_1_acc.f90
+$> nvfortran example_01.f90
 $> time ./a.out
 ~~~
 {: .language-bash}
@@ -167,145 +194,529 @@ For our first example we will demonstrate the use of OpenACC to parallelize the
 function  Y = aX + Y,
 
 ~~~
+module mod_saxpy
+
+contains
+
+   subroutine saxpy(n, a, x, y)
+
+      implicit none
+
+      real :: x(:), y(:), a
+      integer :: n, i
+
+!$ACC PARALLEL LOOP
+      do i = 1, n
+         y(i) = a*x(i) + y(i)
+      end do
+!$ACC END PARALLEL LOOP
+
+   end subroutine saxpy
+
+end module mod_saxpy
+
 program main
 
-  integer :: n=10000, i
-  real :: a=3.0
-  real, allocatable :: x(:), y(:)
+   use mod_saxpy
 
-  allocate(x(n),y(n))
+   implicit none
 
-  random_number(x)
-  random_number(y)
+   integer, parameter :: n = huge(n)
+   real :: x(n), y(n), a = 2.3
+   integer :: i
 
-!$acc parallel loop
-  do i=1,n
-    y(i) = a*x(i)+y(i)
-  enddo
-!$acc end parallel loop
+   print *, "Initializing X and Y..."
 
-  print *, y(1), y(n)
+!$ACC PARALLEL LOOP
+   do i = 1, n
+      x(i) = sqrt(real(i))
+      y(i) = sqrt(1.0/real(i))
+   end do
+!$ACC END PARALLEL LOOP
+
+   print *, "Computing the SAXPY operation..."
+
+!$ACC PARALLEL LOOP
+   do i = 1, n
+      y(i) = a*x(i) + y(i)
+   end do
+!$ACC END PARALLEL LOOP
+
+   call saxpy(n, a, x, y)
 
 end program main
 ~~~
 {: .language-fortran}
 
+There are two sections parallelized in the code, on each one of them there is
+some data being implicitly moved to the GPU memory an back to CPU memory.
 
 
 ## Laplace example
 
+This is a good example for demonstrating how a code can be improved step by step adding OpenACC directives.
+We start with the serial version of the code.
+
+### Serial Laplace
+
 ~~~
-! Copyright (c) 2015, NVIDIA CORPORATION. All rights reserved.
-!
-! Redistribution and use in source and binary forms, with or without
-! modification, are permitted provided that the following conditions
-! are met:
-!  * Redistributions of source code must retain the above copyright
-!    notice, this list of conditions and the following disclaimer.
-!  * Redistributions in binary form must reproduce the above copyright
-!    notice, this list of conditions and the following disclaimer in the
-!    documentation and/or other materials provided with the distribution.
-!  * Neither the name of NVIDIA CORPORATION nor the names of its
-!    contributors may be used to endorse or promote products derived
-!    from this software without specific prior written permission.
-!
-! THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ``AS IS'' AND ANY
-! EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-! IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-! PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-! CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-! EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-! PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-! PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
-! OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-! (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-! OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+program serial
+      implicit none
 
-program laplace
-  implicit none
-  integer, parameter :: fp_kind=kind(1.0)
-  integer, parameter :: n=4096, m=4096, iter_max=1000
-  integer :: i, j, iter
-  real(fp_kind), dimension (:,:), allocatable :: A, Anew
-  real(fp_kind), dimension (:),   allocatable :: y0
-  real(fp_kind) :: pi=2.0_fp_kind*asin(1.0_fp_kind), tol=1.0e-5_fp_kind, error=1.0_fp_kind
-  real(fp_kind) :: start_time, stop_time
+      !Size of plate
+      integer, parameter             :: columns=1000
+      integer, parameter             :: rows=1000
+      double precision, parameter    :: max_temp_error=0.01
 
-  allocate ( A(0:n-1,0:m-1), Anew(0:n-1,0:m-1) )
-  allocate ( y0(0:m-1) )
+      integer                        :: i, j, max_iterations, iteration=1
+      double precision               :: dt=100.0
+      real                           :: start_time, stop_time
 
-  A = 0.0_fp_kind
+      double precision, dimension(0:rows+1,0:columns+1) :: temperature, temperature_last
 
-  ! Set B.C.
-  y0 = sin(pi* (/ (j,j=0,m-1) /) /(m-1))
+      print*, 'Maximum iterations [100-4000]?'
+      read*,   max_iterations
 
-  A(0,:)   = 0.0_fp_kind
-  A(n-1,:) = 0.0_fp_kind
-  A(:,0)   = y0
-  A(:,m-1) = y0*exp(-pi)
+      call cpu_time(start_time)      !Fortran timer
 
-  write(*,'(a,i5,a,i5,a)') 'Jacobi relaxation Calculation:', n, ' x', m, ' mesh'
+      call initialize(temperature_last)
 
-  call cpu_time(start_time)
+      !do until error is minimal or until maximum steps
+      do while ( dt > max_temp_error .and. iteration <= max_iterations)
 
-  iter=0
+         do j=1,columns
+            do i=1,rows
+               temperature(i,j)=0.25*(temperature_last(i+1,j)+temperature_last(i-1,j)+ &
+                                      temperature_last(i,j+1)+temperature_last(i,j-1) )
+            enddo
+         enddo
 
-!$omp parallel do shared(Anew)
-  do i=1,m-1
-    Anew(0,i)   = 0.0_fp_kind
-    Anew(n-1,i) = 0.0_fp_kind
-  end do
-!$end omp parallel do
-!$omp parallel do shared(Anew)
-  do i=1,n-1
-    Anew(i,0)   = y0(i)
-    Anew(i,m-1) = y0(i)*exp(-pi)
-  end do
-!$end omp parallel do
+         dt=0.0
 
-  do while ( error .gt. tol .and. iter .lt. iter_max )
-    error=0.0_fp_kind
+         !copy grid to old grid for next iteration and find max change
+         do j=1,columns
+            do i=1,rows
+               dt = max( abs(temperature(i,j) - temperature_last(i,j)), dt )
+               temperature_last(i,j) = temperature(i,j)
+            enddo
+         enddo
 
-!$omp parallel shared(m, n, Anew, A)
+         !periodically print test values
+         if( mod(iteration,100).eq.0 ) then
+            call track_progress(temperature, iteration)
+         endif
 
-!$omp do reduction( max:error )
-!$acc kernels
-    do j=1,m-2
-      do i=1,n-2
-        Anew(i,j) = 0.25_fp_kind * ( A(i+1,j  ) + A(i-1,j  ) + &
-                                     A(i  ,j-1) + A(i  ,j+1) )
-        error = max( error, abs(Anew(i,j)-A(i,j)) )
-      end do
-    end do
-!$acc end kernels
-!$omp end do
+         iteration = iteration+1
 
-    if(mod(iter,100).eq.0 ) write(*,'(i5,f10.6)'), iter, error
-    iter = iter +1
+      enddo
 
-!$omp do
-!$acc kernels
-    do j=1,m-2
-      do i=1,n-2
-        A(i,j) = Anew(i,j)
-      end do
-    end do
-!$acc end kernels
-!$omp end do
+      call cpu_time(stop_time)
 
-!$omp end parallel
+      print*, 'Max error at iteration ', iteration-1, ' was ',dt
+      print*, 'Total time was ',stop_time-start_time, ' seconds.'
 
-  end do
+end program serial
 
-  call cpu_time(stop_time)
-  write(*,'(a,f10.3,a)')  ' completed in ', stop_time-start_time, ' seconds'
 
-  deallocate (A,Anew,y0)
-end program laplace
+! initialize plate and boundery conditions
+! temp_last is used to to start first iteration
+subroutine initialize( temperature_last )
+      implicit none
+
+      integer, parameter             :: columns=1000
+      integer, parameter             :: rows=1000
+      integer                        :: i,j
+
+      double precision, dimension(0:rows+1,0:columns+1) :: temperature_last
+
+      temperature_last = 0.0
+
+      !these boundary conditions never change throughout run
+
+      !set left side to 0 and right to linear increase
+      do i=0,rows+1
+         temperature_last(i,0) = 0.0
+         temperature_last(i,columns+1) = (100.0/rows) * i
+      enddo
+
+      !set top to 0 and bottom to linear increase
+      do j=0,columns+1
+         temperature_last(0,j) = 0.0
+         temperature_last(rows+1,j) = ((100.0)/columns) * j
+      enddo
+
+end subroutine initialize
+
+
+!print diagonal in bottom corner where most action is
+subroutine track_progress(temperature, iteration)
+      implicit none
+
+      integer, parameter             :: columns=1000
+      integer, parameter             :: rows=1000
+      integer                        :: i,iteration
+
+      double precision, dimension(0:rows+1,0:columns+1) :: temperature
+
+      print *, '---------- Iteration number: ', iteration, ' ---------------'
+      do i=5,0,-1
+         write (*,'("("i4,",",i4,"):",f6.2,"  ")',advance='no') &
+                   rows-i,columns-i,temperature(rows-i,columns-i)
+      enddo
+      print *
+end subroutine track_progress
 ~~~
 {: .language-fortran}
 
+### Bad OpenACC Laplace
 
+~~~
+program serial
+      implicit none
+
+      !Size of plate
+      integer, parameter             :: columns=1000
+      integer, parameter             :: rows=1000
+      double precision, parameter    :: max_temp_error=0.01
+
+      integer                        :: i, j, max_iterations, iteration=1
+      double precision               :: dt=100.0
+      real                           :: start_time, stop_time
+
+      double precision, dimension(0:rows+1,0:columns+1) :: temperature, temperature_last
+
+      print*, 'Maximum iterations [100-4000]?'
+      read*,   max_iterations
+
+      call cpu_time(start_time)      !Fortran timer
+
+      call initialize(temperature_last)
+
+      !do until error is minimal or until maximum steps
+      do while ( dt > max_temp_error .and. iteration <= max_iterations)
+
+         !$acc kernels
+         do j=1,columns
+            do i=1,rows
+               temperature(i,j)=0.25*(temperature_last(i+1,j)+temperature_last(i-1,j)+ &
+                                      temperature_last(i,j+1)+temperature_last(i,j-1) )
+            enddo
+         enddo
+         !$acc end kernels
+
+         dt=0.0
+
+         !copy grid to old grid for next iteration and find max change
+         !$acc kernels
+         do j=1,columns
+            do i=1,rows
+               dt = max( abs(temperature(i,j) - temperature_last(i,j)), dt )
+               temperature_last(i,j) = temperature(i,j)
+            enddo
+         enddo
+         !$acc end kernels
+
+         !periodically print test values
+         if( mod(iteration,100).eq.0 ) then
+            call track_progress(temperature, iteration)
+         endif
+
+         iteration = iteration+1
+
+      enddo
+
+      call cpu_time(stop_time)
+
+      print*, 'Max error at iteration ', iteration-1, ' was ',dt
+      print*, 'Total time was ',stop_time-start_time, ' seconds.'
+
+end program serial
+
+
+! initialize plate and boundery conditions
+! temp_last is used to to start first iteration
+subroutine initialize( temperature_last )
+      implicit none
+
+      integer, parameter             :: columns=1000
+      integer, parameter             :: rows=1000
+      integer                        :: i,j
+
+      double precision, dimension(0:rows+1,0:columns+1) :: temperature_last
+
+      temperature_last = 0.0
+
+      !these boundary conditions never change throughout run
+
+      !set left side to 0 and right to linear increase
+      do i=0,rows+1
+         temperature_last(i,0) = 0.0
+         temperature_last(i,columns+1) = (100.0/rows) * i
+      enddo
+
+      !set top to 0 and bottom to linear increase
+      do j=0,columns+1
+         temperature_last(0,j) = 0.0
+         temperature_last(rows+1,j) = ((100.0)/columns) * j
+      enddo
+
+end subroutine initialize
+
+
+!print diagonal in bottom corner where most action is
+subroutine track_progress(temperature, iteration)
+      implicit none
+
+      integer, parameter             :: columns=1000
+      integer, parameter             :: rows=1000
+      integer                        :: i,iteration
+
+      double precision, dimension(0:rows+1,0:columns+1) :: temperature
+
+      print *, '---------- Iteration number: ', iteration, ' ---------------'
+      do i=5,0,-1
+         write (*,'("("i4,",",i4,"):",f6.2,"  ")',advance='no') &
+                   rows-i,columns-i,temperature(rows-i,columns-i)
+      enddo
+      print *
+end subroutine track_progress
+~~~
+{: .language-fortran}
+
+### Efficient OpenACC Laplace
+
+~~~
+program serial
+      implicit none
+
+      !Size of plate
+      integer, parameter             :: columns=1000
+      integer, parameter             :: rows=1000
+      double precision, parameter    :: max_temp_error=0.01
+
+      integer                        :: i, j, max_iterations, iteration=1
+      double precision               :: dt=100.0
+      real                           :: start_time, stop_time
+
+      double precision, dimension(0:rows+1,0:columns+1) :: temperature, temperature_last
+
+      print*, 'Maximum iterations [100-4000]?'
+      read*,   max_iterations
+
+      call cpu_time(start_time)      !Fortran timer
+
+      call initialize(temperature_last)
+
+      !do until error is minimal or until maximum steps
+      !$acc data copy(temperature_last), create(temperature)
+      do while ( dt > max_temp_error .and. iteration <= max_iterations)
+
+         !$acc kernels
+         do j=1,columns
+            do i=1,rows
+               temperature(i,j)=0.25*(temperature_last(i+1,j)+temperature_last(i-1,j)+ &
+                                      temperature_last(i,j+1)+temperature_last(i,j-1) )
+            enddo
+         enddo
+         !$acc end kernels
+
+         dt=0.0
+
+         !copy grid to old grid for next iteration and find max change
+         !$acc kernels
+         do j=1,columns
+            do i=1,rows
+               dt = max( abs(temperature(i,j) - temperature_last(i,j)), dt )
+               temperature_last(i,j) = temperature(i,j)
+            enddo
+         enddo
+         !$acc end kernels
+
+         !periodically print test values
+         if( mod(iteration,100).eq.0 ) then
+            call track_progress(temperature, iteration)
+         endif
+
+         iteration = iteration+1
+
+      enddo
+      !$acc end data
+
+      call cpu_time(stop_time)
+
+      print*, 'Max error at iteration ', iteration-1, ' was ',dt
+      print*, 'Total time was ',stop_time-start_time, ' seconds.'
+
+end program serial
+
+
+! initialize plate and boundery conditions
+! temp_last is used to to start first iteration
+subroutine initialize( temperature_last )
+      implicit none
+
+      integer, parameter             :: columns=1000
+      integer, parameter             :: rows=1000
+      integer                        :: i,j
+
+      double precision, dimension(0:rows+1,0:columns+1) :: temperature_last
+
+      temperature_last = 0.0
+
+      !these boundary conditions never change throughout run
+
+      !set left side to 0 and right to linear increase
+      do i=0,rows+1
+         temperature_last(i,0) = 0.0
+         temperature_last(i,columns+1) = (100.0/rows) * i
+      enddo
+
+      !set top to 0 and bottom to linear increase
+      do j=0,columns+1
+         temperature_last(0,j) = 0.0
+         temperature_last(rows+1,j) = ((100.0)/columns) * j
+      enddo
+
+end subroutine initialize
+
+
+!print diagonal in bottom corner where most action is
+subroutine track_progress(temperature, iteration)
+      implicit none
+
+      integer, parameter             :: columns=1000
+      integer, parameter             :: rows=1000
+      integer                        :: i,iteration
+
+      double precision, dimension(0:rows+1,0:columns+1) :: temperature
+
+      print *, '---------- Iteration number: ', iteration, ' ---------------'
+      do i=5,0,-1
+         write (*,'("("i4,",",i4,"):",f6.2,"  ")',advance='no') &
+                   rows-i,columns-i,temperature(rows-i,columns-i)
+      enddo
+      print *
+end subroutine track_progress
+~~~
+{: .language-fortran}
+
+### Updating Temperature
+
+~~~
+program serial
+      implicit none
+
+      !Size of plate
+      integer, parameter             :: columns=1000
+      integer, parameter             :: rows=1000
+      double precision, parameter    :: max_temp_error=0.01
+
+      integer                        :: i, j, max_iterations, iteration=1
+      double precision               :: dt=100.0
+      real                           :: start_time, stop_time
+
+      double precision, dimension(0:rows+1,0:columns+1) :: temperature, temperature_last
+
+      print*, 'Maximum iterations [100-4000]?'
+      read*,   max_iterations
+
+      call cpu_time(start_time)      !Fortran timer
+
+      call initialize(temperature_last)
+
+      !do until error is minimal or until maximum steps
+      !$acc data copy(temperature_last), create(temperature)
+      do while ( dt > max_temp_error .and. iteration <= max_iterations)
+
+         !$acc kernels
+         do j=1,columns
+            do i=1,rows
+               temperature(i,j)=0.25*(temperature_last(i+1,j)+temperature_last(i-1,j)+ &
+                                      temperature_last(i,j+1)+temperature_last(i,j-1) )
+            enddo
+         enddo
+         !$acc end kernels
+
+         dt=0.0
+
+         !copy grid to old grid for next iteration and find max change
+         !$acc kernels
+         do j=1,columns
+            do i=1,rows
+               dt = max( abs(temperature(i,j) - temperature_last(i,j)), dt )
+               temperature_last(i,j) = temperature(i,j)
+            enddo
+         enddo
+         !$acc end kernels
+
+         !periodically print test values
+         if( mod(iteration,100).eq.0 ) then
+            !$acc update host(temperature)
+            call track_progress(temperature, iteration)
+         endif
+
+         iteration = iteration+1
+
+      enddo
+      !$acc end data
+
+      call cpu_time(stop_time)
+
+      print*, 'Max error at iteration ', iteration-1, ' was ',dt
+      print*, 'Total time was ',stop_time-start_time, ' seconds.'
+
+end program serial
+
+
+! initialize plate and boundery conditions
+! temp_last is used to to start first iteration
+subroutine initialize( temperature_last )
+      implicit none
+
+      integer, parameter             :: columns=1000
+      integer, parameter             :: rows=1000
+      integer                        :: i,j
+
+      double precision, dimension(0:rows+1,0:columns+1) :: temperature_last
+
+      temperature_last = 0.0
+
+      !these boundary conditions never change throughout run
+
+      !set left side to 0 and right to linear increase
+      do i=0,rows+1
+         temperature_last(i,0) = 0.0
+         temperature_last(i,columns+1) = (100.0/rows) * i
+      enddo
+
+      !set top to 0 and bottom to linear increase
+      do j=0,columns+1
+         temperature_last(0,j) = 0.0
+         temperature_last(rows+1,j) = ((100.0)/columns) * j
+      enddo
+
+end subroutine initialize
+
+
+!print diagonal in bottom corner where most action is
+subroutine track_progress(temperature, iteration)
+      implicit none
+
+      integer, parameter             :: columns=1000
+      integer, parameter             :: rows=1000
+      integer                        :: i,iteration
+
+      double precision, dimension(0:rows+1,0:columns+1) :: temperature
+
+      print *, '---------- Iteration number: ', iteration, ' ---------------'
+      do i=5,0,-1
+         write (*,'("("i4,",",i4,"):",f6.2,"  ")',advance='no') &
+                   rows-i,columns-i,temperature(rows-i,columns-i)
+      enddo
+      print *
+end subroutine track_progress
+~~~
+{: .language-fortran}
 
 
 {% include links.md %}

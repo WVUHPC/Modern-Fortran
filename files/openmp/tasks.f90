@@ -140,11 +140,6 @@ program main
    wtime3 = omp_get_wtime() - wtime3 
    !$omp end sections
 
-
-
-
-
-
 !$omp end parallel
 
    wtime = omp_get_wtime() - wtime

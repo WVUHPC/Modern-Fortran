@@ -15,7 +15,7 @@ program testSaxpy
   use mathOps
   use cudafor
   implicit none
-  integer, parameter :: N = 1024000
+  integer, parameter :: N = 102400
   real :: x(N), y(N), a
   real, device :: x_d(N), y_d(N)
   type(dim3) :: grid, tBlock

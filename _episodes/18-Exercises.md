@@ -2,12 +2,6 @@
 title: "Exercises"
 teaching: 0
 exercises: 60
-questions:
-- "Key question (FIXME)"
-objectives:
-- "First learning objective. (FIXME)"
-keypoints:
-- "First key point. Brief Answer to questions. (FIXME)"
 ---
 
 > ## Exercise 1: Valid Fortran Lines
@@ -84,7 +78,7 @@ keypoints:
 >
 > Write an array definition for complex elements in the range [-100,100].
 > How many elements the array will have?
-> Write a constructor where the value of each element in the array is the square root of the corresponding index. Use an compact constructor (implicit loop).
+> Write a constructor where the value of each element in the array is the square root of the corresponding index. Use a compact constructor (implicit loop).
 >
 >
 {: .challenge}
@@ -93,7 +87,7 @@ keypoints:
 >
 > Write a derived type appropriated for a point-like classical particle.
 > The particle has a mass and charge.
-> The derived type should be able to store position and velocity (3D) for the particle. Write an example of a derived type constant for this particle.
+> The derived type should be able to store the position and velocity (3D) of the particle. Write an example of a derived type constant for this particle.
 >
 >
 {: .challenge}
@@ -106,21 +100,21 @@ keypoints:
 
 > ## Exercise 7: Center of mass
 >
-> Write a program that reads a file or randomly create an array that stores the position of N particles in a 3D space.
-> Initially assume for all the particles the same mass.
+> Write a program that reads a file or randomly creates an array that stores the position of N particles in a 3D space.
+> Initially assume for all the particles have the same mass.
 > Write a subroutine to compute the center of mass of these particles.
 >
 {: .challenge}
 
 > ## Exercise 8: Lennard-Jones Potential
 >
-> Write a program that reads a file or randomly create an array that stores the position of N particles in a 3D space.
+> Write a program that reads a file or randomly creates an array that stores the position of N particles in a 3D space.
 > A very simple potential for Molecular Dynamics consists in assuming a potential like:
 > <img src="https://latex.codecogs.com/svg.image?V_\text{LJ}(r)&space;=&space;4\varepsilon&space;\left[&space;\left(\frac{\sigma}{r}\right)^{12}&space;-&space;\left(\frac{\sigma}{r}\right)^6&space;\right]" title="V_\text{LJ}(r) = 4\varepsilon \left[ \left(\frac{\sigma}{r}\right)^{12} - \left(\frac{\sigma}{r}\right)^6 \right]" />
 >
 > Write a program that computes the potential and forces for the set of particles.
 >
-> (*) Add a simple dynamics, moving the particles according to the direction of the force (Gradient of the Potential).
+> (*) Add simple dynamics, moving the particles according to the direction of the force (Gradient of the Potential).
 >
 >
 {: .challenge}
@@ -132,7 +126,7 @@ keypoints:
 > Check the
 Use should be made of the appropriate intrinsic functions.
 >
-> Check if a is zero and return the appropriated solution for the linear case.
+> Check if a is zero and return the appropriate solution for the linear case.
 {: .challenge}
 
 
@@ -150,13 +144,13 @@ Use should be made of the appropriate intrinsic functions.
 >
 > Write a program that:
 >
-> 1. Ask the size N of the array, via command line arguments or reading from standard input.
+> 1. Ask the size N of the array, via command line arguments or read from standard input.
 >    
-> 2. After reading N, allocate an array and filled with random numbers.
+> 2. After reading N, allocate an array filled with random numbers.
 >
 > 3. Write subroutines for computing the average and variance.
 >
-> 4. (*) Reconvert the program to use modules and extend the capabilities of the code to work with multidimensional arrays and being capable of returning averages along specific dimensions.
+> 4. (*) Reconvert the program to use modules and extend the capabilities of the code to work with multidimensional arrays and be capable of returning averages along specific dimensions.
 {: .challenge}
 
 > ## Exercise 11: Toeplitz decomposition
@@ -166,11 +160,11 @@ Use should be made of the appropriate intrinsic functions.
 > <img src="https://latex.codecogs.com/svg.image?X&space;=&space;\frac{1}{2}\left(X&space;&plus;&space;X^\textsf{T}\right)&space;&plus;&space;\frac{1}{2}\left(X&space;-&space;X^\textsf{T}\right)&space;" title="X = \frac{1}{2}\left(X + X^\textsf{T}\right) + \frac{1}{2}\left(X - X^\textsf{T}\right) " />
 >
 > Write a program that creates a random matrix NxN (fix N or ask for it)
-> Write a subroutine that takes the matrix and returns two arrays, one for the symmetric and another for the skew symmetric matrix.
+> Write a subroutine that takes the matrix and returns two arrays, one for the symmetric and another for the skew-symmetric matrix.
 >
 > (hint): You can write your own transpose function or use the intrinsic ``transpose``
 >  
-> (*) Similar case but for a complex matrices. The decomposition using the conjugate transposed.
+> (*) Similar case but for complex matrices. The decomposition using the conjugate transpose.
 >
 {: .challenge}
 
@@ -189,8 +183,8 @@ Use should be made of the appropriate intrinsic functions.
 >
 > <img src="https://latex.codecogs.com/svg.image?a&space;&plus;&space;b\&space;\mathbf&space;i&space;&plus;&space;c\&space;\mathbf&space;j&space;&plus;d\&space;\mathbf&space;k&space;" title="a + b\ \mathbf i + c\ \mathbf j +d\ \mathbf k " />
 >
-> The values of a, b, c and d define a particular quaternion.
-> Quaternions can operate under the addition and substraction.
+> The values of a, b, c, and d define a particular quaternion.
+> Quaternions can operate under addition and subtraction.
 > The multiplication is special and obeys a table shown below
 >
 > |   | 1 | i | j | k |
@@ -200,7 +194,7 @@ Use should be made of the appropriate intrinsic functions.
 > | j	| j	| −k|	−1|	i |
 > | k	| k	| j |	−i|	−1|
 >
-> Write a program that define a derived type for quaternions and write functions to operate with them.
+> Write a program that defines a derived type for quaternions and write functions to operate with them.
 > Write a function to compute the inverse:
 >
 > <img src="https://latex.codecogs.com/svg.image?(a&space;&plus;&space;b\,\mathbf&space;i&space;&plus;&space;c\,\mathbf&space;j&space;&plus;&space;d&space;\,\mathbf&space;k)^{-1}&space;=&space;\frac{1}{a^2&space;&plus;&space;b^2&space;&plus;&space;c^2&space;&plus;&space;d^2}\,(a&space;-&space;b\,\mathbf&space;i&space;-&space;c\,\mathbf&space;j-&space;d\,\mathbf&space;k)" title="(a + b\,\mathbf i + c\,\mathbf j + d \,\mathbf k)^{-1} = \frac{1}{a^2 + b^2 + c^2 + d^2}\,(a - b\,\mathbf i - c\,\mathbf j- d\,\mathbf k)" />
@@ -210,7 +204,7 @@ Use should be made of the appropriate intrinsic functions.
 >
 > > ## Hint
 > >
-> > This code shows how create an interface for the operator (``+``). Implement the product using the table for multiplication.
+> > This code shows how to create an interface for the operator (``+``). Implement the product using the table for multiplication.
 > >
 > > ~~~
 > > module mod_quaternions
@@ -258,8 +252,6 @@ Use should be made of the appropriate intrinsic functions.
 >{: .solution}
 >
 {: .challenge}
-
-
 
 
 {% include links.md %}

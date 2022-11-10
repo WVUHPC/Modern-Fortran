@@ -4,21 +4,21 @@ start: 840
 teaching: 60
 exercises: 0
 questions:
-- "Key question (FIXME)"
+- "How to get faster executions using more cores, GPUs or machines."
 objectives:
-- "First learning objective. (FIXME)"
+- "Learn the most commonly used parallel programming paradigms"
 keypoints:
-- "First key point. Brief Answer to questions. (FIXME)"
+- "Use OpenMP for multiple cores, OpenACC and CUDA Fortran for GPUs and MPI for distributed computing."
 ---
 
 # Why Parallel Computing?
 
-Since the around the 90s Fortran designers understood that the era of programming for a single CPU will be abandoned very soon.
+Since around the 90s, Fortran designers understood that the era of programming for a single CPU will be abandoned very soon.
 At that time, vector machines exist but they were in use for very specialized calculations.
 It was around 2004 that the consumer market start moving out of having a single fast CPU with a single processing unit into a CPU with multiple processing units or cores.
 Many codes are intrinsically serial and adding more cores did not bring more performance out of those codes.
-The figure below shows how a serial code today runs 12 times slower that it could if the increase in performance could have continue as it were before 2004.
-That is the same as to say that the code today runs at a speed that could have been present 8 to 10 years ago with if the trend could have been sustained up to now.
+The figure below shows how a serial code today runs 12 times slower than it could if the increase in performance could have continued as it were before 2004.
+That is the same as saying that the code today runs at a speed that could have been present 8 to 10 years ago with if the trend could have been sustained up to now.
 
 <div style="text-align:center">
 <p>
@@ -38,13 +38,13 @@ The reason for this lack is not a failure in Moore's law when measured in the nu
 <a href="../fig/Transistor-Count-over-time.png">
    <img src="../fig/Transistor-Count-over-time.png" alt="Transistor Count over time" />
 </a>
-A logarithmic graph showing the timeline of how transistor counts in mircochips are almost doubling every two years from 1970 to 2020; Moore's Law.
+A logarithmic graph showing the timeline of how transistor counts in microchips are almost doubling every two years from 1970 to 2020; Moore's Law.
 <br>
 From <a href="https://ourworldindata.org/uploads/2020/11/Transistor-Count-over-time.png"> Our World in Data </a> Data compiled by Max Roser and Hannah Ritchie
 </p>
 </div>
 
-The fact is that instead of faster CPUs computers today have more cores on each CPU, machines on HPC cluster have 2 or more CPU sockets on a single mainboard and we have Accelerators, machines with massive amounts of simple cores that are able to perform certain calculations more efficiently than contemporary CPU.
+The fact is that instead of faster CPUs computers today have more cores on each CPU, machines on HPC clusters have 2 or more CPU sockets on a single mainboard and we have Accelerators, machines with massive amounts of simple cores that are able to perform certain calculations more efficiently than contemporary CPU.
 
 <div style="text-align:center">
 <p>
@@ -58,20 +58,20 @@ New plot and data collected for 2010-2019 by K. Rupp
 </p>
 </div>
 
-It should be clear that computers today are not getting faster and faster over the years as it was the case during the 80s and 90s.
-Computers today are just getting marginally faster if you look at one individual core, but today we have more cores on a machine and basically every computer, tablet and phone around us is multiprocessor.
+It should be clear that computers today are not getting faster and faster over the years as was the case during the 80s and 90s.
+Computers today are just getting marginally faster if you look at one individual core, but today we have more cores on a machine and basically, every computer, tablet, and phone around us is a multiprocessor.
 
-It could be desirable that parallelism could be something that a computer deals automatically.
+It could be desirable that parallelism could be something that a computer deals with automatically.
 The reality is that today, writing parallel code or converting serial code, ie codes that are supposed to run on a single core is not a trivial task.
 
 ## Parallel Programming in Fortran
 
 After the release of Fortran 90 parallelization at the level of the language was considered.
-High Performance Fortran (HPF) was created as an extension of Fortran 90 with constructs that support parallel computing,
+High-Performance Fortran (HPF) was created as an extension of Fortran 90 with constructs that support parallel computing,
 Some HPF capabilities and constructs were incorporated in Fortran 95.
-The implementation of HPF features was uneven across vendors and OpenMP attract vendors to better support OpenMP over HPF features.
-In the next sections we will consider a few important technologies that bring parallel computing to the Fortran Language.
-Some like coarrays are part of the language itself, others like OpenMP, OpenACC, are directives added as comments to the sources and compliant compilers can use those directives to provide parallelism. CUDA Fortran is an superset of the Fortran language and MPI a library for distributed parallel computing.
+The implementation of HPF features was uneven across vendors and OpenMP attracts vendors to better support OpenMP over HPF features.
+In the next sections, we will consider a few important technologies that bring parallel computing to the Fortran Language.
+Some like coarrays are part of the language itself, like OpenMP, and OpenACC, are directives added as comments to the sources and compliant compilers can use those directives to provide parallelism. CUDA Fortran is a superset of the Fortran language and MPI a library for distributed parallel computing.
 In the following sections a brief description of them.
 
 ### Fortran coarrays
@@ -92,7 +92,7 @@ program pi_coarray
    integer, parameter :: n = huge(1)
    real(kind=r15), parameter :: pi_ref = 3.1415926535897932384626433_real64
 
-   integer :: i[*]
+   integer :: i
    integer :: n_per_image[*]
    real(kind=r15) :: real_n[*]
    real(kind=r15) :: pi[*] = 0.0
@@ -105,7 +105,7 @@ program pi_coarray
       print *, 'Number of terms requested : ', n
       print *, 'Real number of terms      : ', real_n
       print *, 'Terms to compute per image: ', n_per_image
-
+      print *, 'Number of images          : ', num_images()
       do i = 1, num_images() - 1
          n_per_image[i] = n_per_image
          real_n[i] = real(n_per_image*num_images(), r15)
@@ -119,7 +119,6 @@ program pi_coarray
    do i = (this_image() - 1)*n_per_image, this_image()*n_per_image - 1
       t = (real(i) + 0.05)/real_n
       pi = pi + 4.0/(1.0 + t*t)
-      !print *, 'IMAGE:', this_image(), 'I:', i, 'PI:', pi
    end do
 
    sync all
@@ -139,7 +138,14 @@ end program pi_coarray
 ~~~
 {: .language-fortran}
 
-You can compile this code using the Intel Fortran compiler which offers an integrated support for Fortran coarrays in shared memory.
+You can compile this code using the Intel Fortran compiler which offers integrated support for Fortran coarrays in shared memory.
+If you are using environment modules be sure of loading modules for the compiler and the MPI implementation.
+Intel MPI is needed as the intel implementation of coarrays is build on top of MPI.
+
+~~~
+$> module load compiler mpi
+~~~
+{: .bash}
 
 ~~~
 $> $ ifort -coarray example_01.f90
@@ -147,36 +153,97 @@ $> $ ifort -coarray example_01.f90
 {: .language-fortran}
 
 ~~~
-$> ./a.out
+$> time ./a.out 
  Number of terms requested :   2147483647
  Real number of terms      :    2147483616.00000     
  Terms to compute per image:     44739242
  Number of images          :           48
  Computed value   3.14159265405511     
  abs difference with reference  4.488514004918898E-008
+
+real    0m2.044s
+user    0m40.302s
+sys     0m16.386s
 ~~~
 {: .output}
 
-When the code runs, multiple processes are create, each of them is called an ``image``.
-The execute the same executable and the processing could diverge by using a unique number that can be inquired with the intrinsic funtion ``this_image()``.
+Another alternative is using gfortran using the [OpenCoarrays](http://www.opencoarrays.org) implementation.
+For a cluster using modules, you need to load the GCC compiler, a MPI implementation and the module for opencoarrays.
+
+~~~
+$> module load lang/gcc/11.2.0 parallel/openmpi/3.1.6_gcc112 libs/coarrays/2.10.1_gcc112_ompi316 
+~~~
+{: .bash}
+
+There are two ways of compile and run the code. OpenCoarrays has its own wrapper for the compiler and executor.
+
+~~~
+$> caf example_01.f90
+~~~
+{: .bash}
+
+To execute the resulting binary use the ``cafrun`` command.
+
+~~~
+$> time cafrun -np 24 ./a.out
+ Number of terms requested :   2147483647
+ Real number of terms      :    2147483640.0000000     
+ Terms to compute per image:     89478485
+ Number of images          :           24
+ Computed value   3.1415926540550383     
+ abs difference with reference   9.7751811090063256E-009
+
+real    1m32.622s
+user    36m29.776s
+sys     0m9.890s
+~~~
+{: .output}
+
+
+Another alternative is to explicitly compile and run
+
+~~~
+$> $ gfortran -fcoarray=lib example_01.f90 -lcaf_mpi
+~~~
+{: .bash}
+
+And execute using ``mpirun`` command:
+
+~~~
+$ time mpirun -np 24 ./a.out 
+ Number of terms requested :   2147483647
+ Real number of terms      :    2147483640.0000000     
+ Terms to compute per image:     89478485
+ Number of images          :           24
+ Computed value   3.1415926540550383     
+ abs difference with reference   9.7751811090063256E-009
+
+real    1m33.857s
+user    36m26.924s
+sys     0m11.614s
+~~~
+{: .output}
+
+When the code runs, multiple processes are created, each of them is called an ``image``.
+They execute the same executable and the processing could diverge by using a unique number that can be inquired with the intrinsic function ``this_image()``.
 In the example above, we distribute the terms in the loop across all the images.
 Each image computes different terms of the series and store the partial sum in the variable pi.
 The variable pi is defined as a coarray with using the ``[*]`` notation.
 That means that each individual has its own variable pi but still can transparently access the value from other images.
 
-At the end of the calculation, the last image is collecting the partial sum from all other images and returning the value obtained from that process.
+At the end of the calculation, the last image is collecting the partial sum from all other images and returns the value obtained from that process.
 
 ### OpenMP
 
-OpenMP was conceived originally as an effort to create an standard for shared-memory multiprocessing (SMP). Today, that have changed to start supporting accelerators but the first versions were concerned only with introduce parallel programming directives for multicore processors.
+OpenMP was conceived originally as an effort to create a standard for shared-memory multiprocessing (SMP). Today, that have changed to start supporting accelerators but the first versions were concerned only with introducing parallel programming directives for multicore processors.
 
-With OpenMP  you can go beyond the directives and use an API, using methods and routines that explicitly demand the compiler to be compliant with those parallel paradigms.
+With OpenMP, you can go beyond the directives and use an API, using methods and routines that explicitly demand the compiler to be compliant with those parallel paradigms.
 
 
-One of the areas where OpenMP is easy to use is parallelizing loops, same as we did using coarrays and as we will be doing as example for the other paradigms of parallelism .
+One of the areas where OpenMP is easy to use is parallelizing loops, same as we did use coarrays and as we will be doing as example for the other paradigms of parallelism.
 
 As an example, lets consider the same program used to introduce Fortran.
-The algorithm that computes pi using a quadrature. (``example_02.f90``)
+The algorithm computes pi using a quadrature. (``example_02.f90``)
 
 ~~~
 program converge_pi
@@ -225,10 +292,10 @@ end do
 ~~~
 {: .language-fortran}
 
-This comments are safely ignored by a compiler that does not support OpenMP.
-A compiler supporting OpenMP will use those instructions to create a executable that will span a number of threads.
-Each thread could potentially run on independent cores resulting on a parallelization of the loop.
-OpenMP also include features to collect the partial sums of ``pi``.
+These comments are safely ignored by a compiler that does not support OpenMP.
+A compiler supporting OpenMP will use those instructions to create an executable that will span a number of threads.
+Each thread could potentially run on independent cores resulting on the parallelization of the loop.
+OpenMP also includes features to collect the partial sums of ``pi``.
 
 To compile this code each compiler provides arguments that enable the support for it.
 In the case of GCC the compilation is:
@@ -245,7 +312,7 @@ $> ifort -qopenmp example_02.f90
 {: .language-bash}
 
 On the NVIDIA Fortran compiler the argument is ``-mp``.
-The extra argument ``-Minfo=all`` is very useful to receive a feedback from the compiler about sections of the code that will be parallelized.
+The extra argument ``-Minfo=all`` is very useful to receive feedback from the compiler about sections of the code that will be parallelized.
 
 ~~~
 $> nvfortran -mp -Minfo=all example_02.f90
@@ -254,20 +321,20 @@ $> nvfortran -mp -Minfo=all example_02.f90
 
 ### OpenACC
 
-OpenACC is another directive-based standards for parallel programming.
-OpenACC was created with to facilitate parallelism not only for multiprocessor but also to external accelerators such as GPUs.
+OpenACC is another directive-based standard for parallel programming.
+OpenACC was created with to facilitate parallelism not only for multiprocessors but also for external accelerators such as GPUs.
 
-Same as OpenMP, in OpenACC the programming is carried out by adding some extra lines to the serial code that are comments from the point of view of the language but interpreted by a compliant language that is capable of interpreting those lines and parallelize the code according to them. The lines of code added to the original sources are called directives. An ignorant compiler will just ignore those lines and the code will execute as before the introduction of the directives.
+Same as OpenMP, in OpenACC the programming is carried out by adding some extra lines to the serial code that are comments from the point of view of the language but are interpreted by a compliant language that is capable of interpreting those lines and parallelizing the code according to them. The lines of code added to the original sources are called directives. An ignorant compiler will just ignore those lines and the code will execute as before the introduction of the directives.
 
 An accelerator is a device specialized on certain numerical operations.
 It usually includes an independent memory device and data needs to be transferred to the device's memory before the accelerator can process the data.
-The figure below show an schematic of one multicore machine with 3 GPUs attached to it.
+The figure below show a schematic of one multicore machine with 3 GPUs attached to it.
 
 <a href="{{ page.root }}/fig/GPU_compute_node.png">
   <img src="{{ page.root }}/fig/GPU_compute_node.png" alt="GPU_compute_node" />
 </a>
 
-As we did for OpenMP, the same code can be made parallel adding a few directives.
+As we did for OpenMP, the same code can be made parallel by adding a few directives.
 (``example_03.f90``)
 
 ~~~
@@ -334,17 +401,15 @@ $> nvfortran -acc -Minfo=all example_03.f90
 
 Using directives instead of extending the language offers several advantages:
 
-  * The original source code continues to be valid for those compilers that do know about OpenMP or OpenACC, there is no need to fork the code. If you stay at the level of directives, the code will continue to work without the parallelization.
+  * The original source code continues to be valid for those compilers that do know about OpenMP or OpenACC, there is no need to fork the code. If you stay at the level of directives, the code will continue to work without parallelization.
 
-  * The directives provides a very high level abstraction for parallelism. Other solutions involve deep knowledge about the architecture where the code will run reducing the portability to other systems. Architectures evolve over time and hardware specifics will become a burden for maintainers of the code when it need to be adapted to newer technologies.
+  * The directives provide a very high-level abstraction for parallelism. Other solutions involve deep knowledge about the architecture where the code will run reducing the portability to other systems. Architectures evolve over time and hardware specifics will become a burden for maintainers of the code when it needs to be adapted to newer technologies.
 
   * The parallelization effort can be done step by step. There is no need to start from scratch planning important rewrites of large portions of the code with will come with more bugs and development costs.
 
-An alternative to OpenMP could be pthreads, and alternative to OpenACC could be CUDA. Both alternatives suffer from the items mentioned above.
+An alternative to OpenMP could be pthreads, and an alternative to OpenACC could be CUDA. Both alternatives suffer from the items mentioned above.
 
-Despite of the similarities at this point, OpenMP and OpenACC were created targeting very different architectures. The idea being that eventually both will converge into a more general solution. We will now discuss each approach separately, at the end of this discussion we will talk about the efforts to converge both approaches.
-
-## MPI
+Despite of the similarities at this point, OpenMP and OpenACC were created targeting very different architectures. The idea is that eventually, both will converge into a more general solution. We will now discuss each approach separately, at the end of this discussion we will talk about the efforts to converge both approaches.
 
 
 {% include links.md %}

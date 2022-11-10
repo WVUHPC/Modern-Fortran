@@ -3,11 +3,11 @@ title: "CUDA Fortran"
 teaching: 60
 exercises: 0
 questions:
-- "Key question (FIXME)"
+- "How to program in CUDA Fortran?"
 objectives:
-- "First learning objective. (FIXME)"
+- "Learn about the CUDA Fortran interface"
 keypoints:
-- "First key point. Brief Answer to questions. (FIXME)"
+- "CUDA Fortran is a direct approach for controlling GPUs for numerical processing"
 ---
 
 ## CUDA Fortran
@@ -17,13 +17,13 @@ parallel computational units with very high memory bandwidth, and potential
 for scientific applications.
 GPU designs are optimized for the kind of computations found in graphics
 rendering, but are general enough to be useful in many cases involving
-data-parallelism, linear algebra and other common use cases in scientific
+data-parallelism, linear algebra, and other common use cases in scientific
 computing.
 
 
 CUDA Fortran is the Fortran interface to the CUDA parallel computing platform.  
 If you are familiar with CUDA C, then you are already well on your way to using
-CUDA Fortran as it is based on the CUDA C runtime API.  
+CUDA Fortran is based on the CUDA C runtime API.  
 There are a few differences in how CUDA concepts are expressed using
 Fortran 90 constructs, but the programming model for both CUDA Fortran and
 CUDA C is the same.
@@ -40,14 +40,14 @@ used.
 The CUDA programming model is a heterogeneous model in which both the CPU
 and GPU are used. In CUDA, the host refers to the CPU and its memory,
 while the device refers to the GPU and its memory.
-Code running on the host manages the memory on both the host and device,
+Code running on the host manages the memory on both the host and device
 and also launches kernels which are subroutines executed on the device.
 These kernels are executed by many GPU threads in parallel.
 
 Given the heterogeneous nature of the CUDA programming model, a typical
 sequence of operations for a CUDA Fortran code is:
 
- * Declare and allocate host and device memory.
+ * Declare and allocate a host and device memory.
  * Initialize host data.
  * Transfer data from the host to the device.
  * Execute one or more kernels.

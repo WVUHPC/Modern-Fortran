@@ -3,44 +3,44 @@ title: "Best Practices in Modern Fortran"
 teaching: 60
 exercises: 0
 questions:
-- "Key question (FIXME)"
+- "How to move out of Fortran 77 into Modern Fortran styles?"
 objectives:
-- "First learning objective. (FIXME)"
+- "Learn the difference between deprecated styles and the modern ways of Fortran coding."
 keypoints:
-- "First key point. Brief Answer to questions. (FIXME)"
+- "Avoid old Fortran 77 style even if correct the code looks better if you use Modern Fortran"
 ---
 
 # Best Practices in Modern Fortran
 
 Fortran is a language with a long history.
 Fortran is one of the oldest Programming Languages still in active use.
-That old history means that the language have evolved in expression and scope in more than 60 years.
+That old history means that the language has evolved in expression and scope over more than 60 years.
 
-The way you programmed Fortran back in the 60s, 70s and 80s is completely inadequate to modern computers.
+The way you programmed Fortran back in the 60s, 70s, and 80s is completely inadequate for modern computers.
 Consider for example the length of the lines.
-Back in the 70s and 80s people programmed computers using punched cards
+Back in the 70s and 80s, people programmed computers using punched cards
 and later dumb terminals connected to mainframes.
 Those terminals have a limited number of characters in one line.
 It is from that time that a limit of 72 characters on one line and characters beyond column 72 were ignored.
 The first five columns must be blank or contain a numeric label.
 Continuation lines were identified by a nonblank, nonzero in column 6.
-All these limitations were present on what is called Standard Fixed Format of Fortran 77.
+All these limitations were present in what is called the Standard Fixed Format of Fortran 77.
 
 Over time, these limitations and many others in the language became obsolete but were still in use for decades even after Fortran 90 was the new Standard.
-Back in the 90s, there were no free Fortran 90 compilers, people continue to use Fortran 77 with restrictions relaxed and some characteristics of Fortran 90 integrated little by little in the compilers.
+Back in the 90s, there were no free Fortran 90 compilers, people continue to use Fortran 77 with restrictions relaxed and some characteristics of Fortran 90 were integrated little by little into the compilers.
 
-The fact is that there are a many codes written in Fortran 77.
-If you search for Fortran tutorials and documentation, there are many pages in academic that still teach Fortran 77.
+The fact is that there are many codes written in Fortran 77.
+If you search for Fortran tutorials and documentation, there are many pages in academics that still teach Fortran 77.
 Fortran 90 was gaining space and later Fortran 95.
 Today almost main Fortran compilers support Fortran 2003 entirely and Fortran 2008 to a fairly complete degree. New features in Fortran 2018 are still not implemented in the latest version of major compilers.
 
-In previous sections we have discussed the basic elements so you can read and write code in Fortran.
+In previous sections, we have discussed the basic elements so you can read and write code in Fortran.
 We learn about variables assignments subroutines and modules and we explored those elements using the modern ways of writing code in Fortran.
-In this section we will have to learn a bit the "old ways" is such a way that when you encounter those pieces of code, you can recognize them knowing which are the alternatives and best practices used today.
-This is in this way and intermediate class in Modern Fortran.
-I assume you know the basics and is able to write useful code in Fortran.
-The idea is to recognize old Fortran 77 and Fortran 90 styles and being able to translate those into modern Fortran 2003 and 2008 Standards.
-By doing that you are moving the code into more flexible, readable, extensible and potentially with more performance.
+In this section we will have to learn a bit about the "old ways" in such a way that when you encounter those pieces of code, you can recognize them knowing which are the alternatives and best practices used today.
+This is in this way an intermediate class in Modern Fortran.
+I assume you know the basics and are able to write useful code in Fortran.
+The idea is to recognize old Fortran 77 and Fortran 90 styles and be able to translate those into modern Fortran 2003 and 2008 Standards.
+By doing that you are moving the code into more flexible, readable, extensible, and potentially with more performance.
 
 ## The old Fortran 77
 
@@ -49,30 +49,30 @@ It was so powerful that stay as the standard *de facto* well in the 90s.
 Many elements of the language still in use today were added to Fortran 77 to address the limitations of FORTRAN 66.
 For example the ``IF`` and ``END IF`` statements including ``ELSE`` and ``ELSE IF`` were the first steps into structured programming.
 These statements were an important move to move ``GOTO`` into oblivion.
-``GOTO`` were one of the reasons why codes were so difficult to follow and almost unpredictable when were the source of a bug.
+``GOTO``was one of the reasons why codes were so difficult to follow and almost unpredictable when were the source of a bug.
 Another powerful element of the language were intrinsic functions such as ``SQRT`` that accept complex or double precision numbers as arguments.  
-All these niceties today are taken for granted but back them were big improvements to the language.
+All these niceties today are taken for granted but back then were big improvements to the language.
 However, the language has important flaws.
 One important is the lack of dynamic memory allocation.
-The code still promote a code that is cluttered, with missing blanks and in general hard to read.
+The code still promotes a code that is cluttered, with missing blanks, and in general hard to read.
 
-Now the question is, if a code works in Fortran 77 why to change it?
+Now the question is if a code works in Fortran 77 why change it?
 Investing some time now in rewriting a code in a new language could return in big gains later on.
-A new structure could emerge that use better the memory (with dynamic allocation) structure the code in ways that make it easier to read and to extend.
+A new structure could emerge that uses better memory (with dynamic allocation) to structure the code in ways that make it easier to read and extend.
 There are good reasons and rewards for better and cleaner code.
 
 ## Free Format
 
 Back to the first versions of Fortran, the first 5 columns of characters were dedicated as label fields.
-A C in column 1 means that the line were treated as a comment and any character in column 6 means that the line was a continuation of the previous statement.
+A C in column 1 means that the line was treated as a comment and any character in column 6 means that the line was a continuation of the previous statement.
 
 Today those restrictions are no longer needed.
-Statements can start at the first column.
+Statements can start in the first column.
 An exclamation mark starts a comment and comments could be inserted any place in the line, except literal strings.
-Blanks help readability of the code.
-Variables cannot have spaces, it is a better practice to use underscore for multi word variables.
+Blanks help the readability of the code.
+Variables cannot have spaces, it is a better practice to use underscore for multi-word variables.
 Use ``&`` as the last character for continuing on the next line.
-Declaring multiple statements on the same line is possible with semicolon (``;``) but use it only for very short statements.
+Declaring multiple statements on the same line is possible with a semicolon (``;``) but use it only for very short statements.
 
 Example (``example_01.f90``):
 
@@ -87,7 +87,7 @@ end program free_form
 ~~~
 {: .language-fortran}
 
-Use blank characters, blank lines and comments to improve readability of your code.
+Use blank characters, blank lines and comments to improve the readability of your code.
 A cluttered code is hard to read and you are not doing any good trying to fit most of your code in one screen page.
 
 Instead of this (``example_02_bad.f90``):
@@ -125,20 +125,20 @@ Indentations inside the ``program`` and ``end program`` also help to visualize t
 
 ## Old style DO loops
 
-In old FORTRAN 77, do loops have a number identifier to jump to a ``continue`` statement to cycle the loop, that is completely obsolete and must be avoided in modern coding (``example_03_bad.f90``):
+In old FORTRAN 77, do loops have a numerical identifier to jump to a ``continue`` statement to cycle the loop, that is completely obsolete and must be avoided in modern coding (``example_03_bad.f90``):
 
 ~~~
       PROGRAM square
       DO 100 I=1,100
       X=I
       X2=X*X
-      IF(X2.LT.100) print *, 'X=', I, ' X^2 wil have less than 3 digits'
+      IF(X2.LT.100) print *, 'X=', I, ' X^2 will have less than 3 digits
 100   CONTINUE
       END
 ~~~
 {: .language-fortran}
 
-This old style coding waste 6 columns of space, uses a labeled statement for cycling and is written with full capitalization.
+This old style of coding wastes 6 columns of space, uses a labeled statement for cycling and is written with full capitalization.
 
 An alternative is something like this (``example_03_good.f90``):
 
@@ -154,24 +154,24 @@ program square
       x = i
       x2 = x*x
       if (x2 < 100) &
-         print *, 'X=', I, ' X^2 wil have less than 3 digits'
+         print *, 'X=', I, ' X^2 will have less than 3 digits
    end do
 
 end program
 ~~~
 {: .language-fortran}
 
-This code uses indentations, and has an ``end do`` that is clearer for the user when the loops grows or became nested. We will discuss the ``implicit`` down below
+This code uses indentations and has an ``end do`` that is clearer for the user when the loops grow or became nested. We will discuss the ``implicit`` down below
 
 ## Variable Attributes
 
 Fortran 95 introduce variable attributes and they were extended in Fortran 2003 and 2008. The most common attributes are
 ``parameter``, ``dimension``, ``allocatable``, ``intent``, ``pointer``, ``target``, ``optional``, ``private``, ``public``, ``value`` and ``bind``
 
-From those we will demonstrate the first 3.
-``parameter`` is important for declaring constants that otherwise will require going beyond the language and use the preprocessor.
-``dimension`` is use to define the length of arrays or the dimension using colon and commas to declare it.
-``allocatable`` is used for dynamic allocation of arrays an important feature introduced in Fortran 90 and expanded in Fortran 95 and beyond.
+From those, we will demonstrate the first 3.
+``parameter`` is important for declaring constants that otherwise will require going beyond the language and using the preprocessor.
+``dimension``is used to define the length of arrays or the dimension using colons and commas to declare it.
+``allocatable`` is used for the dynamic allocation of arrays an important feature introduced in Fortran 90 and expanded in Fortran 95 and beyond.
 This is an example using these 3 attributes that should be frequently used (``example_04.f90``).
 
 ~~~
@@ -282,7 +282,7 @@ end program
 {: .language-fortran}
 
 In the case of nested loops, the solution is to name the loop.
-Constructs such as ``do``, ``if`` as ``case`` can be named and you can use the name to leave outer loops from inside a inner loop.
+Constructs such as ``do``, and ``if`` as ``case`` can be named and you can use the name to leave outer loops from inside an inner loop.
 
 ~~~
 ...
@@ -348,11 +348,11 @@ end select
 ## The ``kind`` of variables
 
 There are at least 2 kinds of reals: 4-byte, 8-byte.
-Some compilers offer a third kind with 16-byte reals.
-The kind-numbers are usually 4, 8, and 16, but this is just a tradition of several languages and not mandatory by the language.
-The kind values could perfectly (1, 2 and 4).
+Some compilers offer the third kind with 16-byte reals.
+The kind numbers are usually 4, 8, and 16, but this is just a tradition of several languages and not mandatory by the language.
+The kind values could be 1, 2 and 4.
 
-There is an intrinsic module called ``iso_fortran_env`` that provide the kind values for logical, character, integer and real data types.
+There is an intrinsic module called ``iso_fortran_env`` that provides the kind values for logical, character, integer, and real data types.
 
 Consider this example to get the values used (``example_07.f90``)
 
@@ -428,7 +428,7 @@ end program
 {: .language-fortran}
 
 The original REAL data type have received multiple variations for declaring floating point numbers based on rather ambiguous terms such as ``DOUBLE PRECISION`` which actually does not mean what literally says.
-Other variations use the kind assuming that the numbers 4, 8, and 16 represent the number of bytes used by each data type, this is not standard and salford f95 compiler used kinds 1,2, and 3 to stand for 2- 4- and 8-byte.
+Other variations use the kind assuming that the numbers 4, 8, and 16 represent the number of bytes used by each data type, this is not standard and Salford f95 compiler used kinds 1,2, and 3 to stand for 2- 4- and 8-byte.
 
 Notice that storage size is not the same as precision. Those terms are related and you expect that more bytes will end up giving more precision, but REALS have several internal components such as the size of mantissa and exponent.
 The 24 bits (including the hidden bit) of mantissa in a 32-bit floating-point number represent about 7 significant decimal digits.
@@ -600,18 +600,18 @@ Changing kinds during compile time could have unintended consequences, for examp
 ## Allocatable arrays
 
 There are two types of memory for a program: The *stack* and the *heap*.
-Scalars and static arrays live in the *stack* but the size of that space is very limited and some sysadmins and queue systems limits its value even more.
+Scalars and static arrays live in the *stack* but the size of that space is very limited and some sysadmins and queue systems limit its value even more.
 Most other variables including allocatable arrays live on the heap.
 
-Before allocatable arrays were part of Fortran 90, Arrays were created with fixed size.
-Programs used arrays with sizes that overstimated the actual needs for storage or require being recompiled every time the size of those arrays changed.
-Still some scientific codes work with fixed arrays and need recompilation before any simulation.
+Before allocatable arrays were part of Fortran 90, Arrays were created with a fixed size.
+Programs used arrays with sizes that overestimated the actual needs for storage or require being recompiled every time the size of those arrays changed.
+Still, some scientific codes work with fixed arrays and need recompilation before any simulation.
 Modern written codes (Since Fortran 90) used allocatable arrays.
-Declarations and allocation happens in two steps instead of a single step with fixed arrays.
-As allocation takes time, it is not good idea to allocate and deallocate very often.
+Declarations and allocation happen in two steps instead of a single step with fixed arrays.
+As allocation takes time, it is not a good idea to allocate and deallocate very often.
 Allocate once and use the space as much as possible.
-Fortran 90 introduce ``ALLOCATABLE`` attributes and ``allocate`` and ``deallocate`` functions.
-Fotran 95 added ``DIMENSION`` attribute as an alternative to specify the dimension of arrays. Otherwise, the array shape must be specified after array-variable name. For example (``example_10.f90``):
+Fortran 90 introduces ``ALLOCATABLE`` attributes and ``allocate`` and ``deallocate`` functions.
+Fortran 95 added ``DIMENSION`` attribute as an alternative to specifying the dimension of arrays. Otherwise, the array shape must be specified after the array-variable name. For example (``example_10.f90``):
 
 ~~~
 program alloc_array
@@ -663,7 +663,7 @@ end program
 ## Array Allocations: heap vs stack
 
 Static arrays could be allocated on the stack instead of using the heap.
-The stack has a limited size and under some circumstances static arrays could exhaust the stack space allowed for a process.
+The stack has a limited size and under some circumstances, static arrays could exhaust the stack space allowed for a process.
 Consider this example (``example_12.f90``):
 
 ~~~
@@ -734,7 +734,7 @@ Segmentation fault (core dumped)
 {: .source}
 
 We are so close to filling the stack that small variations in loading libraries could cross the limit.
-Try a few times until the code stops when asking for an input from the keyboard.
+Try a few times until the code stops when asking for input from the keyboard.
 
 Once the code is waiting for any input, execute this command on a separate terminal:
 
@@ -788,16 +788,16 @@ total kB           24744    9056    8324
 ~~~
 {: .output}
 
-Notice that in this case we have fully consumed the stack.
-Compilers could take decisions of moving static arrays to the heap, but even with this provisions, is very easy that multiple arrays combined could cross the limit.
+Notice that in this case, we have fully consumed the stack.
+Compilers could take decisions of moving static arrays to the heap, but even with these provisions, is very easy that multiple arrays combined could cross the limit.
 
-Consider arrays to be always ``allocatables``, so they are allocated on the heap always.
+Consider arrays to be always ``allocatable``, so they are allocated on the heap always.
 
 ## Derived Types and Structures
 
-Beyond the variables of simple type (real, integer, character, logical, complex) new data types can be created by grouping them into a derived types.
+Beyond the variables of a simple type (real, integer, character, logical, complex) new data types can be created by grouping them into a derived type.
 Derived types can also include other derived types
-Arrays can also be included both static and allocatables.
+Arrays can also be included in both static and allocatable.
 Structures can be made allocatable.
 
 Consider this example that shows the use of *derived types* and its instances called *structures* (``example_13.f90``).
@@ -1194,10 +1194,10 @@ Many operations that require loops in C are done in one operation in Fortran, th
 
 Conditions for operations with arrays are:
 
-  * The left and right side of an assignment must me conformable.
+  * The left and right sides of an assignment must be conformable.
      That means that the same number of elements are involved and they match in dimension
 
-  * Operations with strides are valid if the are also conformable.
+  * Operations with strides are valid if they are also conformable.
 
 Example (``example_20.f90``):
 

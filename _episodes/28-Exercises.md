@@ -2,12 +2,6 @@
 title: "Exercises"
 teaching: 0
 exercises: 60
-questions:
-- "Key question (FIXME)"
-objectives:
-- "First learning objective. (FIXME)"
-keypoints:
-- "First key point. Brief Answer to questions. (FIXME)"
 ---
 
 > ## Exercise 1:
@@ -28,7 +22,7 @@ keypoints:
 
 > ## Exercise 2:
 >
-> 1. Write a Fortran code that computes the integral of function
+> 1. Write a Fortran code that computes the integral of a function
 > f(x)=log(pi*x)*sin(pi*x)**2 + x in the range [1,10]
 >
 > 2. Use rectangles to approximate the integral and use an OpenMP parallel loop.
@@ -36,7 +30,7 @@ keypoints:
 >
 > 3. Compare the performance of the serial code compared with the parallel version.
 >
-> 4. Use the function omp_get_wtime() to get the time spend on the loop.
+> 4. Use the function omp_get_wtime() to get the time spent on the loop.
 >    The function returns a real and can be used before and after the loop.
 {: .challenge}
 
@@ -46,7 +40,7 @@ keypoints:
 >
 > <img src="https://latex.codecogs.com/svg.image?\frac{\pi}{2}&space;=&space;\left(\frac{2}{1}&space;\cdot&space;\frac{2}{3}\right)&space;\cdot&space;\left(\frac{4}{3}&space;\cdot&space;\frac{4}{5}\right)&space;\cdot&space;\left(\frac{6}{5}&space;\cdot&space;\frac{6}{7}\right)&space;\cdot&space;\left(\frac{8}{7}&space;\cdot&space;\frac{8}{9}\right)&space;\cdot&space;\;&space;\cdots&space;=&space;\prod_{n=1}^{\infty}&space;\left(&space;\frac{&space;4n^2&space;}{&space;4n^2&space;-&space;1&space;}&space;\right)" title="\frac{\pi}{2} = \left(\frac{2}{1} \cdot \frac{2}{3}\right) \cdot \left(\frac{4}{3} \cdot \frac{4}{5}\right) \cdot \left(\frac{6}{5} \cdot \frac{6}{7}\right) \cdot \left(\frac{8}{7} \cdot \frac{8}{9}\right) \cdot \; \cdots = \prod_{n=1}^{\infty} \left( \frac{ 4n^2 }{ 4n^2 - 1 } \right)" />
 >
-> 1. Use the reduction for a product to the an approximation of pi
+> 1. Use the reduction for a product to an approximation of pi
 >
 > 2. How many terms are needed to get 4 good digits?
 >

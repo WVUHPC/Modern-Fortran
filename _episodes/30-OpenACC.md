@@ -4,16 +4,17 @@ start: 840
 teaching: 60
 exercises: 0
 questions:
-- "Key question (FIXME)"
+- ""
 objectives:
-- "First learning objective. (FIXME)"
+- "How to write code for GPUs from a directive-base model?"
 keypoints:
-- "First key point. Brief Answer to questions. (FIXME)"
+- "OpenACC is another directive-base model for parallel programming."
+- "OpenACC is similar to OpenMP but take advantage of accelerators such as GPUs"
 ---
 
 # OpenACC
 
-OpenACC is another directive-base model for parallel programming.
+OpenACC is another directive-based model for parallel programming.
 It is similar to OpenMP but focused more on Accelerators rather than Multicore processors as OpenMP.
 
 Similar to OpenMP, the idea is to take the original code and introduce directives in places that could benefit from parallel programming.
@@ -24,13 +25,13 @@ Before version 4.0, OpenMP was designed to provide parallelism to multicore syst
 With the advent of accelerators, like GPUs, a more general paradigm was needed that preserve the nice features that OpenMP bring to parallel computing.
 
 An accelerator is, in general, a device that is able to perform certain classes of computations with more performance than the CPU.
-Accelerators such as the GPUs come with a high bandwidth memory that is separated from the main CPU RAM.
+Accelerators such as GPUs come with a high bandwidth memory that is separated from the main CPU RAM.
 Any processing that happens in an accelerator must first transfer the data from the CPU memory into the device memory and at the end of the calculation, move the data back.
 
 Currently, the best support for OpenACC comes from NVIDIA compilers (nvfortran), followed by GCC compilers (gfortran). Intel compilers do not support OpenACC and there is no plan for support it in the near future.
 
-In this lesson we will follow a similar path as we did for OpenMP.
-First we parallelize a loop and later we generalize the operation to more abstract parallel entities, such as tasks.
+In this lesson, we will follow a similar path as we did for OpenMP.
+First, we parallelize a loop and later we generalize the operation to more abstract parallel entities, such as tasks.
 Most of the complexity added to OpenACC compared to OpenMP comes from the fact that accelerators usually work on their own memory space, meaning that to use them, data must be transferred into the accelerator and final data move it back to CPU memory.
 That is more complex than the way OpenMP works where data is always in CPU memory and threads are able to see that memory space directly and operate with it.
 
@@ -47,11 +48,11 @@ A construct is made of one **directive** followed by one or more **clauses**
 If directive and its clauses became too long, you can split the line using **backslash**(``\``) at the end of the line to extend the interpretation to the next line.
 
 
-Beyond using OpenACC directives you could prefer to have  a fine detail on the parallel execution.
-OpenACC offers an API similar to OpenMP which also offer one.
+Beyond using OpenACC directives you could prefer to have fine detail on the parallel execution.
+OpenACC offers an API similar to OpenMP which also offers one.
 Using them and the code will only be able to work with the OpenACC runtime environment.
 
-In fortran the API is activated by including the module ``openacc``
+In Fortran, the API is activated by including the module ``openacc``
 
 ~~~
 use openacc
@@ -115,7 +116,7 @@ $> qsub -I -q comm_gpu_inter -l nodes=1:ppn=8:gpus=1
 {: .language-bash}
 
 The command above request 1 GPU card, 8 CPU cores on 1 node.
-The default walltime for ``comm_gpu_inter`` queue is 4 hours, so that is the amount of time that is given when the job start running.
+The default wall time for ``comm_gpu_inter`` queue is 4 hours, so that is the amount of time that is given when the job start running.
 The reason for selecting 8 hours is that most GPU compute nodes offer 3 GPU cards and those machines have 24 cores, the ratio then is 8 CPU cores for each GPU card.
 There are ways of using more than one GPU card but 1 GPU is enough during these examples and exercises.
 
@@ -163,8 +164,8 @@ $> export PGI_ACC_TIME=1
 ~~~
 {: .language-bash}
 
-For our first compilation we will compile without any special argument for the compiler.
-By default the compiler will ignore entirely any OpenACC directive and compile a pure Fortran code.
+For our first compilation, we will compile without any special argument for the compiler.
+By default, the compiler will ignore entirely any OpenACC directive and compile a pure Fortran code.
 
 ~~~
 $> nvfortran example_01.f90
@@ -183,7 +184,7 @@ sys	  0m1.479s
 
 We are using time to get the amount of time took by the execution of the code.
 Notice that there are 2 loops that take most of the time, one initializing the array ``a`` and a second that computes ``b``.
-We have use a few functions like ``exp``, ``sin`` and their inverses.
+We have used a few functions like ``exp``, ``sin`` and their inverses.
 Those are simple mathematical operations but computing with them takes a few CPU cycles for each value, making them particularly expensive for a large array like ``a``.
 Compiling the code like above, the resulting executable will only run on one core.
 The timing says that 27 seconds are needed on the machine.

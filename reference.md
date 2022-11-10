@@ -4,6 +4,6 @@ layout: reference
 
 ## Glossary
 
-FIXME
+MPI: Message Passing Interface
 
 {% include links.md %}

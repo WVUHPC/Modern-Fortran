@@ -3,21 +3,21 @@ title: "OpenMP: Parallel Multiprocessing"
 teaching: 60
 exercises: 0
 questions:
-- "Key question (FIXME)"
+- "How to use the multiple cores on modern computers"
 objectives:
-- "First learning objective. (FIXME)"
+- "Learn about programming with OpenMP in Fortran"
 keypoints:
-- "First key point. Brief Answer to questions. (FIXME)"
+- "OpenMP is a directive-based approach for parallelization."
 ---
 
 ## OpenMP
 
-OpenMP is a directive based approach for parallelization.
+OpenMP is a directive-based approach to parallelization.
 OpenMP offers a set of pragmas, ie comments that can be added to the source code to guide the compiler on how it should parallelize certain regions.
-OpenMP also provides an API, routines and variables that can be accessed inside the sources and manipulate even further the paralelization.
+OpenMP also provides an API, routines, and variables that can be accessed inside the sources and manipulate even further the parallelization.
 
-The first specs for OpenMP date back from 1997.
-Today most modern Fortran compilers support OpenMP 3.0 and the 3 compilers that we will be using (GNU, Intel and NVIDIA) support most of the OpenMP 4.0 or OpenMP 4.5.
+The first specs for OpenMP date back to 1997.
+Today most modern Fortran compilers support OpenMP 3.0 and the 3 compilers that we will be using (GNU, Intel, and NVIDIA) support most OpenMP 4.0 or OpenMP 4.5.
 
 OpenMP was created for parallelizing code for shared memory machines. Shared memory machines are those with multiple cores where the cores are able to see, ie address the entire memory of the machine.
 
@@ -57,14 +57,14 @@ Hello electron
 ~~~
 {: .output}
 
-To produce a result that is consistent on all machines, we have define the variable ``OMP_NUM_THREADS=4`` so the code at runtime will create 4 threads regardless of the number of cores on the machine. Not defining this variable and the executable will create by default as many threads as cores it founds on the machine running the code.
+To produce a result that is consistent on all machines, we have defined the variable ``OMP_NUM_THREADS=4`` so the code at runtime will create 4 threads regardless of the number of cores on the machine. Not defining this variable and the executable will create by default as many threads as cores it founds on the machine running the code.
 
-In Fortran the directives ``!$OMP PARALLEL`` and ``!$OMP END PARALLEL`` will create a block, in this case a single line block, that will run in parallel. The number of threads that will be created is decided at runtime, at least for this simple parallel block, there is no information about how many threads will be generated.
+In Fortran, the directives ``!$OMP PARALLEL`` and ``!$OMP END PARALLEL`` will create a block, in this case, a single line block, that will run in parallel. The number of threads that will be created is decided at runtime, at least for this simple parallel block, there is no information about how many threads will be generated.
 
-Notice the how two lines of code made this code from running on a single core to run on multiple cores, without any provisions about how many cores it will run.
+Notice how two lines of code made this code from running on a single core to running on multiple cores, without any provisions about how many cores it will run.
 This level of abstraction is one of the big advantages of the approach.
 
-Before OpenMP the alternative for multithreading in fortran could be something like Pthreads, there is a library for pthreads for IBM AIX machines, the Pthreads Library Module (f_pthread). In this case we will demonstrate the code in C which is shown below:
+Before OpenMP the alternative for multithreading in Fortran could be something like Pthreads, there is a library for pthreads for IBM AIX machines, the Pthreads Library Module (f_pthread). In this case, we will demonstrate the code in C which is shown below:
 
 ~~~
 #include <pthread.h>
@@ -109,16 +109,16 @@ The kernel of the Operating System manages the execution of all processes, as ma
 Switching from one process to another requires some time (relatively) for saving and loading registers, memory maps, and other resources.
 
 From the other side, a thread is the unit of execution within a process.
-A process can have just one thread or having many threads.
-Contrary to multiple processes on a machine, each thread in the process shares memory and resources from that process. In single-threaded processes, the process contains one thread. The process and the thread are one and the same, and there is only one thing happening.
+A process can have just one thread or many threads.
+Contrary to multiple processes on a machine, each thread in the process shares memory and resources from that process. In single-threaded processes, the process contains one thread. The process and the threads are one and the same, and there is only one thing happening.
 
-What OpenMP does is to create new threads on the same process and as those processes shared resources, the can read and write on the memory addresses assigned to the variables of a process, using this technique multiple threads can effectively complete tasks in parallel when there is data independence in the algorithm being executed.
+What OpenMP does is to create new threads on the same process and as those processes shared resources, they can read and write on the memory addresses assigned to the variables of a process, using this technique multiple threads can effectively complete tasks in parallel when there is data independence in the algorithm being executed.
 
 Many applications today are multithreading, but the way multithreading and in particular OpenMP is used in scientific applications is very different from the multithreading found on desktop applications or games.
 
-For HPC applications, the usual case is for multiple threads work concurrently of portions of big arrays, reducing values such as sums or products in in some cases dividing efforts in separate tasks. The life cycle of threads in OpenMP is more consistent compared for example to multiple threads on a game process. On a game new threads are generated and destroyed continuously based on actions of the user.
+For HPC applications, the usual case is for multiple threads to work concurrently on portions of big arrays, reducing values such as sums or products in some cases dividing efforts into separate tasks. The life cycle of threads in OpenMP is more consistent compared for example to multiple threads on a game process. In a game, new threads are generated and destroyed continuously based on the actions of the user.
 
-One of the reasons why parallelization is no a trivial task that can be automatically execute by a compiler by for example adding ``parallel`` directives to every loop in a program is due to a non trivial difficulty to identify **data dependencies** and **data races**.
+One of the reasons why parallelization is no a trivial task that can be automatically executed by a compiler by for example adding ``parallel`` directives to every loop in a program is due to a non-trivial difficulty to identify **data dependencies** and **data races**.
 
 ### Data dependencies
 
@@ -132,8 +132,8 @@ ENDDO
 ~~~
 {: .language-fortran}
 
-Assuming that A and B are different arrays, on this loop you can notice that every element of the loop can be  computed independent from the others, in fact there is nothing that forces a given order in the calculation.
-You can split the loop in 2 or 100 pieces and compute the smaller loops on arbitrary order without affecting the final result. That is very different from:
+Assuming that A and B are different arrays, on this loop you can notice that every element of the loop can be computed independent from the others, in fact, there is nothing that forces a given order in the calculation.
+You can split the loop in 2 or 100 pieces and compute the smaller loops in arbitrary order without affecting the final result. That is very different from:
 
 ~~~
 A(0)=1
@@ -143,11 +143,11 @@ ENDDO
 ~~~
 {: .language-fortran}
 
-You cannot longer split the loop as computing every element in the loop requires the computation of the value on the previous index.
+You can no longer split the loop as computing every element in the loop requires the computation of the value on the previous index.
 
-Sometimes data dependencies can be solved by reordering operations, separating loops. A data dependency like shown above cannot be eliminated without changing the algorithm itself or this portion of the code serial.
+Sometimes data dependencies can be solved by reordering operations, and separating loops. A data dependency like shown above cannot be eliminated without changing the algorithm itself or this portion of the code serial.
 
-In many cases there are many loops in a code that do not have data dependencies, some of them worth of being parallelized.
+In many cases, there are many loops in a code that do not have data dependencies, some of them worthy of being parallelized.
 Consider this simple initialization of an array (``simple_omp.f90``):
 
 ~~~
@@ -175,12 +175,12 @@ $> nvgfortran -mp -Minfo=all simple_omp.f90
 ~~~
 {: .language-bash}
 
-You can notice than running this code on a modern computer could be
-5 times faster with OpenMP that without it.
+You can notice that running this code on a modern computer could be
+5 times faster with OpenMP than without it.
 The size of the array is one reason, but also the fact that computing the square root of a number takes several CPU cycles to compute.
 There are many cases with smaller arrays but more complex operations where the lack of data dependencies make those loops good candidates for parallelization.
 
-In this case there is just one variable inside the loop and the variable ``array`` is shared among all the threads that are filling it. In more complex situations there are more variables and we need to decide which variables will be shared and which variables need private copies to prevent a single variable being overwritten by multiple threads.
+In this case, there is just one variable inside the loop and the variable ``array`` is shared among all the threads that are filling it. In more complex situations there are more variables and we need to decide which variables will be shared and which variables need private copies to prevent a single variable from being overwritten by multiple threads.
 
 ### Shared and private variables
 
@@ -230,7 +230,7 @@ This code is computing an array ``area_to_volume`` that stores the ratio between
 
 The code is doing computing all those values twice.
 The same loop is computing  ``area_to_volume_S``, the serial version of the loop.
-The second loop computes ``area_to_volume_P`` and has OpenMP directives which will effective parallelize the code if the compilation activates those directives.
+The second loop computes ``area_to_volume_P`` and has OpenMP directives which will effectively parallelize the code if the compilation activates those directives.
 Except for the ``print`` the content of both loops is the same and the content of the arrays should be identical.
 
 Lets compile this code with nvfortran:
@@ -403,8 +403,8 @@ Variables ``c`` and ``d`` are also private, but they differ if the initial value
 
 Change the value of n to a very large value, and notice that a produces a different result on each run, those are very rare events so only with a very large loop is possible to trigger them.
 
-For beginners is a good practice to force an explict declaration of each variable.
-Use *default(none)* and you have to decide explictly if a variable is shared or private.
+For beginners is a good practice to force an explicit declaration of each variable.
+Use *default(none)* and you have to decide explicitly if a variable is shared or private.
 
 The default rules in Fortran for sharing are:
 
@@ -427,9 +427,9 @@ end do
 ~~~
 
 The variable ``i`` is always private by default,
-For OpenMP in Fortran the variable ``j`` is also private but this is not true for OpenMP in C.
+For OpenMP in Fortran, the variable ``j`` is also private but this is not true for OpenMP in C.
 
-It is good to remember that the most optimal way of traverse index on arrays is by operating on adjacent elements in memory. In the case of Fortran the fast index is the first one, contrary to C where the adjacent elements run on the second index.
+It is good to remember that the most optimal way of traversing index on arrays is by operating on adjacent elements in memory. In the case of Fortran, the fast index is the first one, contrary to C where the adjacent elements run on the second index.
 
 ## Reductions
 
@@ -522,11 +522,11 @@ OpenMP has a variety of tools for managing processes. One of the more prominent 
 {: .language-fortran}
 
 
-The barrier directive stops all processes for proceeding to the next line of code until all processes have reached the barrier. This allows a programmer to synchronize processes in the parallel program.
+The barrier directive stops all processes from proceeding to the next line of code until all processes have reached the barrier. This allows a programmer to synchronize processes in the parallel program.
 
 A critical directive ensures that a line of code is only run by one process at a time, ensuring thread safety in the body of code.
 
-One simple example consist on ensuring that the messages from different threads print in qorder
+One simple example consists on ensuring that the messages from different threads print in order
 
 ~~~
 program main

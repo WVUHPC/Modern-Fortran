@@ -3,11 +3,11 @@ title: "Advanced Topics in MPI"
 teaching: 0
 exercises: 60
 questions:
-- "Key question (FIXME)"
+- "How to use collective operations on MPI"
 objectives:
-- "First learning objective. (FIXME)"
+- "Learn about collective operations with MPI"
 keypoints:
-- "First key point. Brief Answer to questions. (FIXME)"
+- "Collective operations are usually more efficient than point-to-point messages"
 ---
 
 ### More Collectives: Scatter and Gather
@@ -22,7 +22,7 @@ Collective Communications
 </div>
 
 The ``MPI_Bcast`` and ``MPI_Reduce`` operations have more complex analogs that are very useful in a variety of algorithms.
-Just like ``MPI_Bcast`` and ``MPI_Reduce``, the benefit of using these routines, instead of point-to-point messages, is not only syntactical convenience, but also much better efficiency.
+Just like ``MPI_Bcast`` and ``MPI_Reduce``, the benefit of using these routines, instead of point-to-point messages, is not only syntactical convenience but also much better efficiency.
 They allow for swaths of data to be distributed from a root process to all other available processes, or data from all processes can be collected at one process.
 These operators can eliminate the need for a surprising amount of boilerplate code via two functions:
 Keep in mind that these are called "collective" because every PE in the communicator must call these routines at the same time.
